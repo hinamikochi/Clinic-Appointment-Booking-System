@@ -1,13 +1,7 @@
 const { DataTypes } = require('sequelize');
-const { Sequelize } = require('sequelize');
+const sequelize = require('../db'); 
 require('dotenv').config();
 
-// Khởi tạo lại kết nối để Model sử dụng
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
-    logging: false
-});
 
 const User = sequelize.define('User', {
     full_name: {
@@ -30,4 +24,4 @@ const User = sequelize.define('User', {
     }
 });
 
-module.exports = { User, sequelize };
+module.exports =  User ;
