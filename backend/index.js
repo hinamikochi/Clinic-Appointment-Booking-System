@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
-const { User, sequelize } = require('./models/User'); 
+const sequelize = require('./db');
+const User = require('./models/User');
+const Specialty = require('./models/Specialty');
 require('dotenv').config();
 
 const app = express();
@@ -34,6 +36,21 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.get('/', (req, res) => res.send('Server dang chay...'));
+
+// API Lấy danh sách chuyên khoa
+app.get('/api/specialties', async (req, res) => {
+    try {
+        const list = await Specialty.findAll();
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy danh sách chuyên khoa.' });
+    }
+});
+
+app.get('/api/users/doctors', async (req, res) => {
+    const doctors = await User.findAll({ where: { role: 'doctor' } });
+    res.json(doctors);
+});
 
 const jwt = require('jsonwebtoken');
 
@@ -68,6 +85,16 @@ app.post('/api/login', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server.' });
+    }
+});
+
+app.post('/api/specialties', async (req, res) => {
+    try {
+        const { name, description, image } = req.body;
+        const newSpecialty = await Specialty.create({ name, description, image });
+        res.status(201).json({ message: 'Chuyên khoa mới đã được tạo!', data: newSpecialty });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi tạo chuyên khoa mới.' });
     }
 });
 
