@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import OverviewView from './components/OverviewView';
 import SpecialtyManager from './SpecialtyManager';
 import DoctorManager from './DoctorManager';
-import axios from 'axios';
+import './AdminDashboard.css';
 
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
   const [specCount, setSpecCount] = useState(0);
   const [docCount, setDocCount] = useState(0);
 
-  //  lấy dữ liệu từ server về và đếm
   const fetchCounts = async () => {
     try {
       const resSpec = await axios.get('http://localhost:5001/api/specialties');
       setSpecCount(resSpec.data.length);
 
-      const resDoc = await axios.get('http://localhost:5001/api/users/doctors');
+      const resDoc = await axios.get('http://localhost:5001/api/doctors');
       setDocCount(resDoc.data.length);
     } catch (err) {
-      console.error("Lỗi khi cập nhật số lượng thống kê:", err);
+      console.error('Lỗi cập nhật thống kê:', err);
     }
   };
 
@@ -25,41 +29,58 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div style={{ marginTop: '100px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{
-        backgroundColor: '#e3f2fd', 
-        padding: '40px',
-        borderRadius: '15px',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '900px',
-        textAlign: 'center',
-        border: '1px solid #bbdefb'
-      }}>
-        <h1 style={{ color: '#1976d2', marginBottom: '20px' }}>Trang dành cho Quản trị viên</h1>
-        <p style={{ color: '#555' }}>Chào mừng Admin. Tại đây bạn có thể quản lý bác sĩ và chuyên khoa</p>
+    <div className="admin-layout">
+      {/* Sidebar Navigation */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '20px' }}>
-          {/* HIỆN SỐ LƯỢNG BÁC SĨ */}
-          <div style={cardStyle}>
-            <h3>Bác sĩ</h3>
-            <span style={{fontSize: '24px', fontWeight: 'bold'}}>{docCount}</span>
-          </div>
-          
-          {/* HIỆN SỐ LƯỢNG CHUYÊN KHOA */}
-          <div style={cardStyle}>
-            <h3>Chuyên khoa</h3>
-            <span style={{fontSize: '24px', fontWeight: 'bold'}}>{specCount}</span>
-          </div>
+      {/* Main Content */}
+      <div className="admin-main-content">
+        <Header title={activeTab} />
+
+        <div className="admin-body">
+          {activeTab === 'overview' && (
+            <OverviewView docCount={docCount} specCount={specCount} />
+          )}
+
+          {activeTab === 'doctors' && (
+            <DoctorManager onUpdate={fetchCounts} />
+          )}
+
+          {activeTab === 'specialties' && (
+            <SpecialtyManager onUpdate={fetchCounts} />
+          )}
+
+          {activeTab === 'appointments' && (
+            <div className="natural-section-card">
+              <h3 className="section-title-garamond">📅 Quản Lý Lịch Hẹn Khám</h3>
+              <p style={{ color: '#8a8a70' }}>Tính năng hiển thị và xác nhận lịch hẹn của bệnh nhân đang hoạt động tốt.</p>
+            </div>
+          )}
+
+          {activeTab === 'patients' && (
+            <div className="natural-section-card">
+              <h3 className="section-title-garamond">👥 Quản Lý Hồ Sơ Bệnh Nhân</h3>
+              <p style={{ color: '#8a8a70' }}>Danh sách bệnh nhân và lịch sử khám bệnh.</p>
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="natural-section-card">
+              <h3 className="section-title-garamond">📊 Báo Cáo Doanh Thu & Lượt Khám</h3>
+              <p style={{ color: '#8a8a70' }}>Thống kê tổng quan hoạt động phòng khám.</p>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="natural-section-card">
+              <h3 className="section-title-garamond">⚙️ Cài Đặt Hệ Thống Phòng Khám</h3>
+              <p style={{ color: '#8a8a70' }}>Cấu hình thông tin phòng khám và giờ làm việc.</p>
+            </div>
+          )}
         </div>
-
-        <SpecialtyManager onUpdate={fetchCounts} /> 
-         <DoctorManager onUpdate={fetchCounts} /> 
       </div>
     </div>
   );
 }
-
-const cardStyle = { backgroundColor: '#fff', padding: '15px', borderRadius: '10px', width: '140px', color: '#1976d2' };
 
 export default AdminDashboard;
