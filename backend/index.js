@@ -159,15 +159,84 @@ app.post('/api/admin/doctors', async (req, res) => {
     }
 });
 
-// API Lưu thông tin bác sĩ
-app.post('/api/doctors', async (req, res) => {
+// API Cập nhật chuyên khoa
+app.put('/api/specialties/:id', async (req, res) => {
     try {
-        const { userId, specialtyId, degree, image, description } = req.body;
-        // upsert: Có rồi thì cập nhật, chưa có thì thêm mới
-        await DoctorInfo.upsert({ userId, specialtyId, degree, image, description });
-        res.status(200).json({ message: 'Lưu thông tin bác sĩ thành công!' });
+        const { id } = req.params;
+        const { name, description, image } = req.body;
+        const specialty = await Specialty.findByPk(id);
+        if (!specialty) return res.status(404).json({ message: 'Không tìm thấy chuyên khoa!' });
+
+        await specialty.update({ name, description, image });
+        res.json({ message: 'Cập nhật chuyên khoa thành công!', data: specialty });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi khi lưu thông tin bác sĩ' });
+        console.error('Lỗi cập nhật chuyên khoa:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật chuyên khoa.' });
+    }
+});
+
+// API Xóa chuyên khoa
+app.delete('/api/specialties/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const specialty = await Specialty.findByPk(id);
+        if (!specialty) return res.status(404).json({ message: 'Không tìm thấy chuyên khoa!' });
+
+        // Kiểm tra xem có bác sĩ nào thuộc chuyên khoa này không
+        const docCount = await DoctorInfo.count({ where: { specialtyId: id } });
+        if (docCount > 0) {
+            return res.status(400).json({ message: `Không thể xóa! Có ${docCount} bác sĩ đang thuộc chuyên khoa này.` });
+        }
+
+        await specialty.destroy();
+        res.json({ message: 'Đã xóa chuyên khoa thành công!' });
+    } catch (error) {
+        console.error('Lỗi xóa chuyên khoa:', error);
+        res.status(500).json({ message: 'Lỗi server khi xóa chuyên khoa.' });
+    }
+});
+
+// API Cập nhật thông tin bác sĩ cho Admin
+app.put('/api/admin/doctors/:id', async (req, res) => {
+    try {
+        const { id } = req.params; // DoctorInfo id
+        const { full_name, email, specialtyId, degree, image, description } = req.body;
+
+        const doctorInfo = await DoctorInfo.findByPk(id, { include: [User] });
+        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin bác sĩ!' });
+
+        // Cập nhật thông tin User liên kết
+        if (doctorInfo.User) {
+            await doctorInfo.User.update({ full_name, email });
+        }
+
+        // Cập nhật DoctorInfo
+        await doctorInfo.update({ specialtyId, degree, image, description });
+
+        res.json({ message: 'Cập nhật thông tin bác sĩ thành công!' });
+    } catch (error) {
+        console.error('Lỗi cập nhật bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật bác sĩ.' });
+    }
+});
+
+// API Xóa bác sĩ cho Admin
+app.delete('/api/admin/doctors/:id', async (req, res) => {
+    try {
+        const { id } = req.params; // DoctorInfo id
+        const doctorInfo = await DoctorInfo.findByPk(id);
+        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin bác sĩ!' });
+
+        const userId = doctorInfo.userId;
+        await doctorInfo.destroy();
+        if (userId) {
+            await User.destroy({ where: { id: userId } });
+        }
+
+        res.json({ message: 'Đã xóa bác sĩ và tài khoản liên quan thành công!' });
+    } catch (error) {
+        console.error('Lỗi xóa bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi server khi xóa bác sĩ.' });
     }
 });
 
