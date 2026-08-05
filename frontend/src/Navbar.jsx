@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Stethoscope, ShieldCheck, LogOut, LogIn, UserPlus } from 'lucide-react';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -10,35 +11,58 @@ function Navbar() {
     localStorage.removeItem('user');
     navigate('/');
     window.location.reload();
-  }
+  };
 
   return (
     <nav className="navbar">
+      {/* Logo MediNatural */}
       <div className="nav-logo">
-        <Link to="/">🏥 MyClinic</Link>
+        <Link to="/" className="nav-brand-link">
+          <div className="brand-icon-mini">
+            <Stethoscope size={18} color="#ffffff" />
+          </div>
+          <span className="brand-text-garamond">
+            MyClinic <span className="brand-tag-mini">CLINIC</span>
+          </span>
+        </Link>
       </div>
+
+      {/* Cụm nút bên phải */}
       <div className="nav-links">
         {user ? (
-          <>
-            <span style={{marginRight: '15px', color: '#333'}}>Chào, <strong>{user.full_name}</strong></span>
+          <div className="user-nav-box">
+            <span className="user-welcome-text">
+              Chào, <strong className="user-name-serif">{user.full_name}</strong>
+            </span>
 
-            {/*Admin */}
-            {user.role == 'admin' && 
-              <Link to="/admin" className="nav-btn admin-btn" style ={{color: 'blue', marginRight: '10px', 
-                fontWeight: 'bold'}}
-              >Quản trị</Link>}
+            {/* Nút Quản trị cho Admin */}
+            {user.role === 'admin' && (
+              <Link to="/admin" className="nav-btn-admin">
+                <ShieldCheck size={16} /> Trang Quản Trị
+              </Link>
+            )}
 
-              {/* Doctor */}
-              {user.role === 'doctor' && <Link to="/doctor" className="nav-btn" style={{color: 'green'}}>Lịch khám</Link>}
+            {/* Nút Lịch khám cho Bác sĩ */}
+            {user.role === 'doctor' && (
+              <Link to="/doctor" className="nav-btn-doctor">
+                🩺 Lịch Khám
+              </Link>
+            )}
 
-            {/* Đăng xuất */}
-            <button onClick={handleLogout} className="nav-btn register-btn" style={{cursor: 'pointer'}}>Đăng xuất</button>
-          </>
+            {/* Nút Đăng xuất */}
+            <button onClick={handleLogout} className="nav-btn-logout">
+              <LogOut size={14} /> Đăng xuất
+            </button>
+          </div>
         ) : (
-          <>
-            <Link to="/login" className="nav-btn login-btn">Đăng nhập</Link>
-            <Link to="/register" className="nav-btn register-btn">Đăng ký</Link>
-          </>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Link to="/login" className="nav-btn-login">
+              <LogIn size={15} /> Đăng nhập
+            </Link>
+            <Link to="/register" className="nav-btn-register">
+              <UserPlus size={15} /> Đăng ký
+            </Link>
+          </div>
         )}
       </div>
     </nav>
