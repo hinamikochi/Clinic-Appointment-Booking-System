@@ -4,11 +4,18 @@ const bcrypt = require('bcryptjs');
 const sequelize = require('./db');
 const User = require('./models/User');
 const Specialty = require('./models/Specialty');
+const DoctorInfo = require('./models/DoctorInfo');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+
+User.hasOne(DoctorInfo, { foreignKey: 'userId' });
+DoctorInfo.belongsTo(User, { foreignKey: 'userId' });
+Specialty.hasMany(DoctorInfo, { foreignKey: 'specialtyId' });
+DoctorInfo.belongsTo(Specialty, { foreignKey: 'specialtyId' });
 
 // Tự động tạo bảng
 sequelize.sync({ alter: true })
@@ -37,20 +44,6 @@ app.post('/api/register', async (req, res) => {
 
 app.get('/', (req, res) => res.send('Server dang chay...'));
 
-// API Lấy danh sách chuyên khoa
-app.get('/api/specialties', async (req, res) => {
-    try {
-        const list = await Specialty.findAll();
-        res.json(list);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi lấy danh sách chuyên khoa.' });
-    }
-});
-
-app.get('/api/users/doctors', async (req, res) => {
-    const doctors = await User.findAll({ where: { role: 'doctor' } });
-    res.json(doctors);
-});
 
 const jwt = require('jsonwebtoken');
 
@@ -88,6 +81,16 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// API Lấy danh sách chuyên khoa
+app.get('/api/specialties', async (req, res) => {
+    try {
+        const list = await Specialty.findAll();
+        res.json(list);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy danh sách chuyên khoa.' });
+    }
+});
+
 app.post('/api/specialties', async (req, res) => {
     try {
         const { name, description, image } = req.body;
@@ -98,5 +101,87 @@ app.post('/api/specialties', async (req, res) => {
     }
 });
 
+
+// API Lấy danh sách bác sĩ (User có role = 'doctor')
+app.get('/api/users/doctors', async (req, res) => {
+    const doctors = await User.findAll({ 
+        where: { role: 'doctor' }, 
+        attributes: ['id', 'full_name'] 
+    });
+    res.json(doctors);
+});
+
+// API Lấy danh sách bác sĩ
+app.get('/api/doctors', async (req, res) => {
+    try {
+        const doctors = await DoctorInfo.findAll({
+            include: [
+                { model: User, attributes: ['id', 'full_name', 'email'] },
+                { model: Specialty, attributes: ['id', 'name'] }
+            ]
+        });
+        res.json(doctors);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy danh sách bác sĩ' });
+    }
+});
+
+// Chức năng tạo mới bác sĩ cho admin
+app.post('/api/admin/doctors', async (req, res) => {
+    try {
+        const { full_name, email, password, specialtyId, degree, image, description } = req.body;
+
+        const userExists = await User.findOne({ where: { email } });
+        if (userExists) return res.status(400).json({ message: 'Email này đã tồn tại!' });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = await User.create({
+            full_name,
+            email,
+            password: hashedPassword,
+            role: 'doctor'
+        });
+
+        await DoctorInfo.create({
+            userId: newUser.id,
+            specialtyId,
+            degree,
+            image,
+            description
+        });
+
+        res.status(201).json({ message: 'Tạo tài khoản bác sĩ thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi tạo bác sĩ' });
+    }
+});
+
+// API Lưu thông tin bác sĩ
+app.post('/api/doctors', async (req, res) => {
+    try {
+        const { userId, specialtyId, degree, image, description } = req.body;
+        // upsert: Có rồi thì cập nhật, chưa có thì thêm mới
+        await DoctorInfo.upsert({ userId, specialtyId, degree, image, description });
+        res.status(200).json({ message: 'Lưu thông tin bác sĩ thành công!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi lưu thông tin bác sĩ' });
+    }
+});
+
 const PORT = 5001;
-app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
+
+const server = app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+});
+
+// Bắt lỗi nếu cổng 5001 đang bị ứng dụng khác chiếm
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Cổng ${PORT} đã bị chiếm dụng! Hãy tắt tiến trình cũ rồi thử lại.`);
+    } else {
+        console.error('❌ Lỗi Server:', err);
+    }
+});
