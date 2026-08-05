@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SpecialtyManager from './SpecialtyManager';
+import DoctorManager from './DoctorManager';
 import axios from 'axios';
 
 function AdminDashboard() {
@@ -53,6 +54,7 @@ function AdminDashboard() {
         </div>
 
         <SpecialtyManager onUpdate={fetchCounts} /> 
+         <DoctorManager onUpdate={fetchCounts} /> 
       </div>
     </div>
   );
