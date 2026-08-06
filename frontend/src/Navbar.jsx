@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope, ShieldCheck, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Stethoscope, ShieldCheck, LogOut, LogIn, UserPlus, CalendarCheck } from 'lucide-react';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -15,19 +15,17 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      {/* Logo MediNatural */}
       <div className="nav-logo">
         <Link to="/" className="nav-brand-link">
           <div className="brand-icon-mini">
             <Stethoscope size={18} color="#ffffff" />
           </div>
           <span className="brand-text-garamond">
-            MyClinic <span className="brand-tag-mini">CLINIC</span>
+            MediNatural <span className="brand-tag-mini">CLINIC</span>
           </span>
         </Link>
       </div>
 
-      {/* Cụm nút bên phải */}
       <div className="nav-links">
         {user ? (
           <div className="user-nav-box">
@@ -42,14 +40,20 @@ function Navbar() {
               </Link>
             )}
 
-            {/* Nút Lịch khám cho Bác sĩ */}
+            {/* Nút Bệnh Nhân */}
+            {user.role === 'patient' && (
+              <Link to="/patient" className="nav-btn-admin">
+                <CalendarCheck size={16} /> Trang Đặt Khám Của Tôi
+              </Link>
+            )}
+
+            {/* Nút Bác sĩ */}
             {user.role === 'doctor' && (
               <Link to="/doctor" className="nav-btn-doctor">
                 🩺 Lịch Khám
               </Link>
             )}
 
-            {/* Nút Đăng xuất */}
             <button onClick={handleLogout} className="nav-btn-logout">
               <LogOut size={14} /> Đăng xuất
             </button>
