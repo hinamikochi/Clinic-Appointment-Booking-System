@@ -1,256 +1,293 @@
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const sequelize = require('./db');
 const User = require('./models/User');
 const Specialty = require('./models/Specialty');
 const DoctorInfo = require('./models/DoctorInfo');
+const Appointment = require('./models/Appointment');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-
+// Thiết lập quan hệ các bảng trong MySQL
 User.hasOne(DoctorInfo, { foreignKey: 'userId' });
 DoctorInfo.belongsTo(User, { foreignKey: 'userId' });
+
 Specialty.hasMany(DoctorInfo, { foreignKey: 'specialtyId' });
 DoctorInfo.belongsTo(Specialty, { foreignKey: 'specialtyId' });
 
-// Tự động tạo bảng
+Specialty.hasMany(Appointment, { foreignKey: 'specialtyId' });
+Appointment.belongsTo(Specialty, { foreignKey: 'specialtyId' });
+
+DoctorInfo.hasMany(Appointment, { foreignKey: 'doctorId' });
+Appointment.belongsTo(DoctorInfo, { foreignKey: 'doctorId' });
+
+User.hasMany(Appointment, { foreignKey: 'userId' });
+Appointment.belongsTo(User, { foreignKey: 'userId' });
+
+// Tự động đồng bộ bảng MySQL
 sequelize.sync({ alter: true })
     .then(() => console.log('✅ Database & Tables synced!'))
     .catch(err => console.error('❌ Sync error:', err));
 
-// API Đăng ký (Register) 
+// API 1: Lấy thông tin tài khoản người dùng theo ID (Đồng bộ Email)
+app.get('/api/users/:id', async (req, res) => {
+    try {
+        const user = await User.findByPk(req.params.id, { attributes: ['id', 'full_name', 'email', 'role'] });
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+});
+
+// API 2: Đăng ký (Register)
 app.post('/api/register', async (req, res) => {
     try {
         const { full_name, email, password, role } = req.body;
         const userExists = await User.findOne({ where: { email } });
-        if (userExists) return res.status(400).json({ message: 'Email da ton tai!' });
+        if (userExists) return res.status(400).json({ message: 'Email đã tồn tại!' });
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = await User.create({
-            full_name, email, password: hashedPassword, role
+            full_name, email, password: hashedPassword, role: role || 'patient'
         });
 
-        res.status(201).json({ message: 'Dang ky thanh cong!', userId: newUser.id });
+        res.status(201).json({ message: 'Đăng ký thành công!', userId: newUser.id });
     } catch (error) {
-        res.status(500).json({ message: 'Loi server.' });
+        res.status(500).json({ message: 'Lỗi server.' });
     }
 });
 
-app.get('/', (req, res) => res.send('Server dang chay...'));
-
-
-const jwt = require('jsonwebtoken');
-
-// API Đăng nhập (Login)
+// API 3: Đăng nhập (Login)
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // 1. Tìm người dùng theo email
         const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
-        }
+        if (!user) return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
 
-        // 2. Kiểm tra mật khẩu (So sánh mật khẩu nhập vào với mật khẩu đã mã hóa trong DB)
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
-        }
+        if (!isMatch) return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
 
-        // 3. Tạo Token (JWT) - Để người dùng có thể làm các việc khác mà không cần đăng nhập lại
         const token = jwt.sign(
             { id: user.id, role: user.role },
             process.env.JWT_SECRET || 'secret_key',
-            { expiresIn: '1d' } // Token có tác dụng trong 1 ngày
+            { expiresIn: '1d' }
         );
 
         res.json({
             message: 'Đăng nhập thành công!',
             token,
-            user: { id: user.id, full_name: user.full_name, role: user.role }
+            user: { 
+                id: user.id, 
+                full_name: user.full_name, 
+                email: user.email, 
+                role: user.role 
+            }
         });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server.' });
     }
 });
 
-// API Lấy danh sách chuyên khoa
-app.get('/api/specialties', async (req, res) => {
+// CÁC API APPOINTMENTS (ĐÃ NÂNG CẤP THÔNG MINH)
+// API 1: Bệnh nhân Đặt Lịch Khám Mới
+app.post('/api/appointments', async (req, res) => {
     try {
-        const list = await Specialty.findAll();
-        res.json(list);
+        const { 
+            patient_name, patient_phone, patient_gender, patient_age,
+            specialtyId, doctorId, appointment_date, time_slot, symptoms, userId 
+        } = req.body;
+
+        if (!patient_name || !patient_phone || !specialtyId || !doctorId || !appointment_date || !time_slot) {
+            return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin bắt buộc!' });
+        }
+
+        const newAppointment = await Appointment.create({
+            patient_name,
+            patient_phone,
+            patient_gender: patient_gender || 'Nam',
+            patient_age: patient_age || 30,
+            specialtyId,
+            doctorId,
+            appointment_date,
+            time_slot,
+            symptoms: symptoms || 'Khám bệnh theo yêu cầu',
+            status: 'pending',
+            userId: userId || null
+        });
+
+        res.status(201).json({ message: 'Đặt lịch khám thành công!', data: newAppointment });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi lấy danh sách chuyên khoa.' });
+        console.error('Lỗi đặt lịch khám:', error);
+        res.status(500).json({ message: 'Lỗi server khi tạo lịch hẹn' });
     }
 });
 
-app.post('/api/specialties', async (req, res) => {
+// API 2: Lấy Lịch Hẹn Của Bệnh Nhân (Tìm thông minh theo userId HOẶC theo Tên Bệnh Nhân)
+app.get('/api/patient/appointments/:userId', async (req, res) => {
     try {
-        const { name, description, image } = req.body;
-        const newSpecialty = await Specialty.create({ name, description, image });
-        res.status(201).json({ message: 'Chuyên khoa mới đã được tạo!', data: newSpecialty });
+        const { userId } = req.params;
+        const user = await User.findByPk(userId);
+        
+        let whereCondition = { userId };
+        if (user) {
+            // Tự động tìm cả những lịch hẹn khớp với Tên Bệnh Nhân (VD: Trần Văn Bình)
+            whereCondition = {
+                [Op.or]: [
+                    { userId: user.id },
+                    { patient_name: user.full_name }
+                ]
+            };
+        }
+
+        const appointments = await Appointment.findAll({
+            where: whereCondition,
+            include: [
+                { model: Specialty, attributes: ['id', 'name'] },
+                { 
+                    model: DoctorInfo, 
+                    attributes: ['id', 'degree'],
+                    include: [{ model: User, attributes: ['full_name', 'email'] }] 
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        res.json(appointments);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi tạo chuyên khoa mới.' });
+        console.error('Lỗi lấy lịch hẹn bệnh nhân:', error);
+        res.status(500).json({ message: 'Lỗi lấy danh sách lịch hẹn cá nhân' });
     }
 });
 
+// API 3: Bệnh nhân Hủy Lịch Hẹn
+app.put('/api/appointments/:id/cancel', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const apt = await Appointment.findByPk(id);
+        if (!apt) return res.status(404).json({ message: 'Không tìm thấy lịch hẹn!' });
 
-// API Lấy danh sách bác sĩ (User có role = 'doctor')
-app.get('/api/users/doctors', async (req, res) => {
-    const doctors = await User.findAll({ 
-        where: { role: 'doctor' }, 
-        attributes: ['id', 'full_name'] 
-    });
-    res.json(doctors);
+        await apt.update({ status: 'cancelled' });
+        res.json({ message: 'Đã hủy lịch hẹn thành công!', data: apt });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi hủy lịch hẹn' });
+    }
 });
 
-// API Lấy danh sách bác sĩ
+// API 4: Admin Lấy Toàn Bộ Lịch Hẹn
+app.get('/api/appointments', async (req, res) => {
+    try {
+        const appointments = await Appointment.findAll({
+            include: [
+                { model: Specialty, attributes: ['id', 'name'] },
+                { 
+                    model: DoctorInfo, 
+                    attributes: ['id', 'degree'],
+                    include: [{ model: User, attributes: ['full_name', 'email'] }] 
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        res.json(appointments);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy danh sách lịch hẹn' });
+    }
+});
+
+// API 5: Admin Cập Nhật Trạng Thái Lịch Hẹn
+app.put('/api/appointments/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const apt = await Appointment.findByPk(id);
+        if (!apt) return res.status(404).json({ message: 'Không tìm thấy lịch hẹn!' });
+
+        await apt.update({ status });
+        res.json({ message: 'Cập nhật trạng thái thành công!', data: apt });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server khi cập nhật' });
+    }
+});
+
+// API Bác Sĩ & Chuyên Khoa
 app.get('/api/doctors', async (req, res) => {
     try {
         const doctors = await DoctorInfo.findAll({
             include: [
-                { model: User, attributes: ['id', 'full_name', 'email'] },
+                { model: User, attributes: ['full_name', 'email', 'role'] },
                 { model: Specialty, attributes: ['id', 'name'] }
             ]
         });
         res.json(doctors);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi lấy danh sách bác sĩ' });
+        res.status(500).json({ message: 'Lỗi server.' });
     }
 });
 
-// Chức năng tạo mới bác sĩ cho admin
+app.get('/api/specialties', async (req, res) => {
+    try {
+        const specialties = await Specialty.findAll();
+        res.json(specialties);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server.' });
+    }
+});
+
+app.post('/api/specialties', async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const newSpec = await Specialty.create({ name, description });
+        res.status(201).json(newSpec);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi tạo chuyên khoa.' });
+    }
+});
+
+app.delete('/api/specialties/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Specialty.destroy({ where: { id } });
+        res.json({ message: 'Đã xóa chuyên khoa!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi xóa chuyên khoa.' });
+    }
+});
+
 app.post('/api/admin/doctors', async (req, res) => {
     try {
         const { full_name, email, password, specialtyId, degree, image, description } = req.body;
-
         const userExists = await User.findOne({ where: { email } });
-        if (userExists) return res.status(400).json({ message: 'Email này đã tồn tại!' });
+        if (userExists) return res.status(400).json({ message: 'Email đã tồn tại!' });
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = await User.create({
-            full_name,
-            email,
-            password: hashedPassword,
-            role: 'doctor'
+            full_name, email, password: hashedPassword, role: 'doctor'
         });
 
-        await DoctorInfo.create({
+        const newDoctorInfo = await DoctorInfo.create({
             userId: newUser.id,
             specialtyId,
-            degree,
-            image,
-            description
+            degree: degree || 'Bác sĩ',
+            image: image || '',
+            description: description || ''
         });
 
-        res.status(201).json({ message: 'Tạo tài khoản bác sĩ thành công!' });
+        res.status(201).json({ message: 'Tạo bác sĩ thành công!', data: newDoctorInfo });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi server khi tạo bác sĩ' });
+        res.status(500).json({ message: 'Lỗi tạo bác sĩ.' });
     }
 });
 
-// API Cập nhật chuyên khoa
-app.put('/api/specialties/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, description, image } = req.body;
-        const specialty = await Specialty.findByPk(id);
-        if (!specialty) return res.status(404).json({ message: 'Không tìm thấy chuyên khoa!' });
-
-        await specialty.update({ name, description, image });
-        res.json({ message: 'Cập nhật chuyên khoa thành công!', data: specialty });
-    } catch (error) {
-        console.error('Lỗi cập nhật chuyên khoa:', error);
-        res.status(500).json({ message: 'Lỗi server khi cập nhật chuyên khoa.' });
-    }
-});
-
-// API Xóa chuyên khoa
-app.delete('/api/specialties/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const specialty = await Specialty.findByPk(id);
-        if (!specialty) return res.status(404).json({ message: 'Không tìm thấy chuyên khoa!' });
-
-        // Kiểm tra xem có bác sĩ nào thuộc chuyên khoa này không
-        const docCount = await DoctorInfo.count({ where: { specialtyId: id } });
-        if (docCount > 0) {
-            return res.status(400).json({ message: `Không thể xóa! Có ${docCount} bác sĩ đang thuộc chuyên khoa này.` });
-        }
-
-        await specialty.destroy();
-        res.json({ message: 'Đã xóa chuyên khoa thành công!' });
-    } catch (error) {
-        console.error('Lỗi xóa chuyên khoa:', error);
-        res.status(500).json({ message: 'Lỗi server khi xóa chuyên khoa.' });
-    }
-});
-
-// API Cập nhật thông tin bác sĩ cho Admin
-app.put('/api/admin/doctors/:id', async (req, res) => {
-    try {
-        const { id } = req.params; // DoctorInfo id
-        const { full_name, email, specialtyId, degree, image, description } = req.body;
-
-        const doctorInfo = await DoctorInfo.findByPk(id, { include: [User] });
-        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin bác sĩ!' });
-
-        // Cập nhật thông tin User liên kết
-        if (doctorInfo.User) {
-            await doctorInfo.User.update({ full_name, email });
-        }
-
-        // Cập nhật DoctorInfo
-        await doctorInfo.update({ specialtyId, degree, image, description });
-
-        res.json({ message: 'Cập nhật thông tin bác sĩ thành công!' });
-    } catch (error) {
-        console.error('Lỗi cập nhật bác sĩ:', error);
-        res.status(500).json({ message: 'Lỗi server khi cập nhật bác sĩ.' });
-    }
-});
-
-// API Xóa bác sĩ cho Admin
-app.delete('/api/admin/doctors/:id', async (req, res) => {
-    try {
-        const { id } = req.params; // DoctorInfo id
-        const doctorInfo = await DoctorInfo.findByPk(id);
-        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin bác sĩ!' });
-
-        const userId = doctorInfo.userId;
-        await doctorInfo.destroy();
-        if (userId) {
-            await User.destroy({ where: { id: userId } });
-        }
-
-        res.json({ message: 'Đã xóa bác sĩ và tài khoản liên quan thành công!' });
-    } catch (error) {
-        console.error('Lỗi xóa bác sĩ:', error);
-        res.status(500).json({ message: 'Lỗi server khi xóa bác sĩ.' });
-    }
-});
+app.get('/', (req, res) => res.send('Server đang chạy...'));
 
 const PORT = 5001;
-
-const server = app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
-});
-
-// Bắt lỗi nếu cổng 5001 đang bị ứng dụng khác chiếm
-server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Cổng ${PORT} đã bị chiếm dụng! Hãy tắt tiến trình cũ rồi thử lại.`);
-    } else {
-        console.error('❌ Lỗi Server:', err);
-    }
-});
+app.listen(PORT, () => console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`));
