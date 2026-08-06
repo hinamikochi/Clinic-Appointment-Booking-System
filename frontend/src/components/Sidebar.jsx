@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Stethoscope, 
   Building2, 
+  CalendarDays,
   ShieldCheck,
   LogOut,
   ChevronRight
@@ -15,8 +16,10 @@ export function Sidebar({ activeTab, setActiveTab }) {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : { full_name: 'Super Admin' };
 
+  // ĐÃ BỔ SUNG TAB QUẢN LÝ LỊCH HẸN
   const navItems = [
     { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
+    { id: 'appointments', label: 'Quản Lý Lịch Hẹn', icon: CalendarDays },
     { id: 'doctors', label: 'Quản Lý Bác Sĩ', icon: Stethoscope },
     { id: 'specialties', label: 'Quản Lý Chuyên Khoa', icon: Building2 },
   ];
