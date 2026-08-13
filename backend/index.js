@@ -8,6 +8,7 @@ const User = require('./models/User');
 const Specialty = require('./models/Specialty');
 const DoctorInfo = require('./models/DoctorInfo');
 const Appointment = require('./models/Appointment');
+const MedicalRecord = require('./models/MedicalRecord');
 require('dotenv').config();
 
 const app = express();
@@ -30,12 +31,18 @@ Appointment.belongsTo(DoctorInfo, { foreignKey: 'doctorId' });
 User.hasMany(Appointment, { foreignKey: 'userId' });
 Appointment.belongsTo(User, { foreignKey: 'userId' });
 
+Appointment.hasOne(MedicalRecord, { foreignKey: 'appointmentId' });
+MedicalRecord.belongsTo(Appointment, { foreignKey: 'appointmentId' });
+
+DoctorInfo.hasMany(MedicalRecord, { foreignKey: 'doctorId' });
+MedicalRecord.belongsTo(DoctorInfo, { foreignKey: 'doctorId' });
+
 // Tự động đồng bộ bảng MySQL
 sequelize.sync({ alter: true })
     .then(() => console.log('✅ Database & Tables synced!'))
     .catch(err => console.error('❌ Sync error:', err));
 
-// API 1: Lấy thông tin tài khoản người dùng theo ID (Đồng bộ Email)
+// API: Lấy thông tin tài khoản người dùng theo ID (Đồng bộ Email)
 app.get('/api/users/:id', async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, { attributes: ['id', 'full_name', 'email', 'role'] });
@@ -46,7 +53,7 @@ app.get('/api/users/:id', async (req, res) => {
     }
 });
 
-// API 2: Đăng ký (Register)
+// API: Đăng ký (Register)
 app.post('/api/register', async (req, res) => {
     try {
         const { full_name, email, password, role } = req.body;
@@ -66,7 +73,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// API 3: Đăng nhập (Login)
+// API: Đăng nhập (Login)
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -97,8 +104,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// CÁC API APPOINTMENTS (ĐÃ NÂNG CẤP THÔNG MINH)
-// API 1: Bệnh nhân Đặt Lịch Khám Mới
+// API: Bệnh nhân Đặt Lịch Khám Mới
 app.post('/api/appointments', async (req, res) => {
     try {
         const { 
@@ -131,7 +137,7 @@ app.post('/api/appointments', async (req, res) => {
     }
 });
 
-// API 2: Lấy Lịch Hẹn Của Bệnh Nhân (Tìm thông minh theo userId HOẶC theo Tên Bệnh Nhân)
+// API: Lấy Lịch Hẹn Của Bệnh Nhân (Tìm thông minh theo userId HOẶC theo Tên Bệnh Nhân)
 app.get('/api/patient/appointments/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -167,7 +173,7 @@ app.get('/api/patient/appointments/:userId', async (req, res) => {
     }
 });
 
-// API 3: Bệnh nhân Hủy Lịch Hẹn
+// API: Bệnh nhân Hủy Lịch Hẹn
 app.put('/api/appointments/:id/cancel', async (req, res) => {
     try {
         const { id } = req.params;
@@ -181,7 +187,7 @@ app.put('/api/appointments/:id/cancel', async (req, res) => {
     }
 });
 
-// API 4: Admin Lấy Toàn Bộ Lịch Hẹn
+// API: Admin Lấy Toàn Bộ Lịch Hẹn
 app.get('/api/appointments', async (req, res) => {
     try {
         const appointments = await Appointment.findAll({
@@ -201,7 +207,7 @@ app.get('/api/appointments', async (req, res) => {
     }
 });
 
-// API 5: Admin Cập Nhật Trạng Thái Lịch Hẹn
+// API: Admin Cập Nhật Trạng Thái Lịch Hẹn
 app.put('/api/appointments/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
@@ -284,6 +290,79 @@ app.post('/api/admin/doctors', async (req, res) => {
         res.status(201).json({ message: 'Tạo bác sĩ thành công!', data: newDoctorInfo });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi tạo bác sĩ.' });
+    }
+});
+
+
+// API: Lấy thông tin chi tiết Bác sĩ theo userId tài khoản
+app.get('/api/doctor/info/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const doctorInfo = await DoctorInfo.findOne({
+            where: { userId },
+            include: [
+                { model: User, attributes: ['id', 'full_name', 'email'] },
+                { model: Specialty, attributes: ['id', 'name'] }
+            ]
+        });
+        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+        res.json(doctorInfo);
+    } catch (error) {
+        console.error('Lỗi lấy thông tin bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi server' });
+    }
+});
+
+// API: Lấy danh sách lịch khám của Bác sĩ theo doctorId
+app.get('/api/doctor/appointments/:doctorId', async (req, res) => {
+    try {
+        const { doctorId } = req.params;
+        const appointments = await Appointment.findAll({
+            where: { doctorId },
+            include: [
+                { model: Specialty, attributes: ['id', 'name'] },
+                { model: MedicalRecord }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+        res.json(appointments);
+    } catch (error) {
+        console.error('Lỗi lấy danh sách khám bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi lấy danh sách khám' });
+    }
+});
+
+// API: Bác sĩ Lưu Hồ sơ bệnh án & Kết quả đơn thuốc (Chuyển trạng thái 'completed')
+app.post('/api/medical-records', async (req, res) => {
+    try {
+        const { appointmentId, patientId, doctorId, diagnosis, prescription, advice, re_visit_date } = req.body;
+        if (!appointmentId || !doctorId || !diagnosis) {
+            return res.status(400).json({ message: 'Vui lòng nhập chẩn đoán bệnh!' });
+        }
+        // 1. Tạo hoặc cập nhật Bệnh án
+        let record = await MedicalRecord.findOne({ where: { appointmentId } });
+        if (record) {
+            await record.update({ diagnosis, prescription, advice, re_visit_date });
+        } else {
+            record = await MedicalRecord.create({
+                appointmentId,
+                patientId: patientId || null,
+                doctorId,
+                diagnosis,
+                prescription,
+                advice,
+                re_visit_date
+            });
+        }
+        // 2. Cập nhật trạng thái Lịch hẹn sang 'completed'
+        const appointment = await Appointment.findByPk(appointmentId);
+        if (appointment) {
+            await appointment.update({ status: 'completed' });
+        }
+        res.status(201).json({ message: 'Lưu hồ sơ bệnh án thành công!', data: record });
+    } catch (error) {
+        console.error('Lỗi lưu hồ sơ bệnh án:', error);
+        res.status(500).json({ message: 'Lỗi server khi lưu bệnh án' });
     }
 });
 
