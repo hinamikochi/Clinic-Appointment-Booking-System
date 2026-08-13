@@ -9,7 +9,7 @@ import DoctorDashboard from './DoctorDashboard';
 import PatientDashboard from './PatientDashboard';
 import './App.css';
 
-// Kiểm tra quyền Admin
+// Bảo vệ Trang Admin
 const ProtectedAdminRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/login" replace />;
@@ -22,7 +22,20 @@ const ProtectedAdminRoute = ({ children }) => {
   return <Navigate to="/login" replace />;
 };
 
-// Kiểm tra quyền Bệnh Nhân
+// Bảo vệ Trang Bác Sĩ
+const ProtectedDoctorRoute = ({ children }) => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return <Navigate to="/login" replace />;
+
+  try {
+    const user = JSON.parse(userStr);
+    if (user.role === 'doctor') return children;
+  } catch (e) { console.error(e); }
+
+  return children;
+};
+
+// Bảo vệ Trang Bệnh Nhân
 const ProtectedPatientRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/login" replace />;
@@ -32,12 +45,14 @@ const ProtectedPatientRoute = ({ children }) => {
     if (user.role === 'patient') return children;
   } catch (e) { console.error(e); }
 
-  return children; // Mặc định mở
+  return children;
 };
 
 function MainLayout() {
   const location = useLocation();
-  const isDashboardRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/patient');
+  const isDashboardRoute = location.pathname.startsWith('/admin') || 
+                           location.pathname.startsWith('/patient') || 
+                           location.pathname.startsWith('/doctor');
 
   return (
     <div className={isDashboardRoute ? 'App-admin' : 'App'}>
@@ -59,7 +74,7 @@ function MainLayout() {
           } 
         />
 
-        {/* Route Bệnh Nhân Riêng */}
+        {/* Route Bệnh Nhân */}
         <Route 
           path="/patient" 
           element={
@@ -69,7 +84,15 @@ function MainLayout() {
           } 
         />
 
-        <Route path="/doctor" element={<DoctorDashboard />} />
+        {/* Route Bác Sĩ */}
+        <Route 
+          path="/doctor" 
+          element={
+            <ProtectedDoctorRoute>
+              <DoctorDashboard />
+            </ProtectedDoctorRoute>
+          } 
+        />
       </Routes>
     </div>
   );
