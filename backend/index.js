@@ -42,7 +42,7 @@ sequelize.sync({ alter: true })
     .then(() => console.log('✅ Database & Tables synced!'))
     .catch(err => console.error('❌ Sync error:', err));
 
-// API: Lấy thông tin tài khoản người dùng theo ID (Đồng bộ Email)
+// API: Lấy thông tin tài khoản người dùng theo ID      
 app.get('/api/users/:id', async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, { attributes: ['id', 'full_name', 'email', 'role'] });
@@ -332,17 +332,20 @@ app.get('/api/doctor/appointments/:doctorId', async (req, res) => {
     }
 });
 
-// API: Bác sĩ Lưu Hồ sơ bệnh án & Kết quả đơn thuốc
+// API Lưu hồ sơ bệnh án
 app.post('/api/medical-records', async (req, res) => {
+    const t = await sequelize.transaction();
     try {
         const { appointmentId, patientId, doctorId, diagnosis, prescription, advice, re_visit_date } = req.body;
+        
         if (!appointmentId || !doctorId || !diagnosis) {
+            await t.rollback(); 
             return res.status(400).json({ message: 'Vui lòng nhập chẩn đoán bệnh!' });
         }
-        // 1. Tạo hoặc cập nhật Bệnh án
-        let record = await MedicalRecord.findOne({ where: { appointmentId } });
+        
+        let record = await MedicalRecord.findOne({ where: { appointmentId }, transaction: t });
         if (record) {
-            await record.update({ diagnosis, prescription, advice, re_visit_date });
+            await record.update({ diagnosis, prescription, advice, re_visit_date }, { transaction: t });
         } else {
             record = await MedicalRecord.create({
                 appointmentId,
@@ -352,16 +355,19 @@ app.post('/api/medical-records', async (req, res) => {
                 prescription,
                 advice,
                 re_visit_date
-            });
+            }, { transaction: t });
         }
-        // 2. Cập nhật trạng thái Lịch hẹn sang 'completed'
-        const appointment = await Appointment.findByPk(appointmentId);
+        
+        const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
         if (appointment) {
-            await appointment.update({ status: 'completed' });
+            await appointment.update({ status: 'completed' }, { transaction: t });
         }
+        
+        await t.commit();
         res.status(201).json({ message: 'Lưu hồ sơ bệnh án thành công!', data: record });
     } catch (error) {
-        console.error('Lỗi lưu hồ sơ bệnh án:', error);
+        await t.rollback();
+        console.error('Lỗi lưu hồ sơ bệnh án', error);
         res.status(500).json({ message: 'Lỗi server khi lưu bệnh án' });
     }
 });
