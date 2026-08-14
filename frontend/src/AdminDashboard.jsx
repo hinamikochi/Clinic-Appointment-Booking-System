@@ -5,6 +5,8 @@ import Header from './components/Header';
 import OverviewView from './components/OverviewView';
 import SpecialtyManager from './SpecialtyManager';
 import DoctorManager from './DoctorManager';
+import AppointmentsView from './components/AppointmentsView';
+import ProfileView from './components/ProfileView';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
@@ -30,52 +32,24 @@ function AdminDashboard() {
 
   return (
     <div className="admin-layout">
-      {/* Sidebar Navigation */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-      {/* Main Content */}
       <div className="admin-main-content">
         <Header title={activeTab} />
-
         <div className="admin-body">
           {activeTab === 'overview' && (
-            <OverviewView docCount={docCount} specCount={specCount} />
+            <OverviewView docCount={docCount} specCount={specCount} setActiveTab={setActiveTab} />
           )}
-
           {activeTab === 'doctors' && (
             <DoctorManager onUpdate={fetchCounts} />
           )}
-
           {activeTab === 'specialties' && (
             <SpecialtyManager onUpdate={fetchCounts} />
           )}
-
           {activeTab === 'appointments' && (
-            <div className="natural-section-card">
-              <h3 className="section-title-garamond">📅 Quản Lý Lịch Hẹn Khám</h3>
-              <p style={{ color: '#8a8a70' }}>Tính năng hiển thị và xác nhận lịch hẹn của bệnh nhân đang hoạt động tốt.</p>
-            </div>
+            <AppointmentsView />
           )}
-
-          {activeTab === 'patients' && (
-            <div className="natural-section-card">
-              <h3 className="section-title-garamond">👥 Quản Lý Hồ Sơ Bệnh Nhân</h3>
-              <p style={{ color: '#8a8a70' }}>Danh sách bệnh nhân và lịch sử khám bệnh.</p>
-            </div>
-          )}
-
-          {activeTab === 'analytics' && (
-            <div className="natural-section-card">
-              <h3 className="section-title-garamond">📊 Báo Cáo Doanh Thu & Lượt Khám</h3>
-              <p style={{ color: '#8a8a70' }}>Thống kê tổng quan hoạt động phòng khám.</p>
-            </div>
-          )}
-
-          {activeTab === 'settings' && (
-            <div className="natural-section-card">
-              <h3 className="section-title-garamond">⚙️ Cài Đặt Hệ Thống Phòng Khám</h3>
-              <p style={{ color: '#8a8a70' }}>Cấu hình thông tin phòng khám và giờ làm việc.</p>
-            </div>
+          {activeTab === 'profile' && (
+            <ProfileView />
           )}
         </div>
       </div>
