@@ -9,6 +9,7 @@ import {
   Stethoscope, 
   Home
 } from 'lucide-react';
+import ProfileView from './components/ProfileView';
 import './AdminDashboard.css';
 
 function PatientDashboard() {
@@ -18,14 +19,12 @@ function PatientDashboard() {
   const userStr = localStorage.getItem('user');
   const initialUser = userStr ? JSON.parse(userStr) : { id: 0, full_name: 'Bệnh Nhân', email: '' };
 
-  // State tài khoản người dùng hiển thị
   const [userInfo, setUserInfo] = useState(initialUser);
 
-  // Form State Đặt Lịch
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [patientName, setPatientName] = useState(initialUser.full_name || '');
-  const [patientPhone, setPatientPhone] = useState('');
+  const [patientPhone, setPatientPhone] = useState(initialUser.phone || '');
   const [patientGender, setPatientGender] = useState('Nam');
   const [patientAge, setPatientAge] = useState(30);
   const [specialtyId, setSpecialtyId] = useState('');
@@ -35,10 +34,8 @@ function PatientDashboard() {
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Lịch hẹn cá nhân của tôi
   const [myAppointments, setMyAppointments] = useState([]);
 
-  // Tải dữ liệu tự động
   const fetchData = async () => {
     try {
       const resSpecs = await axios.get('http://localhost:5001/api/specialties');
@@ -55,14 +52,12 @@ function PatientDashboard() {
       }
 
       if (initialUser.id) {
-        // 1. Tự động lấy Email mới nhất từ MySQL
         const resUser = await axios.get(`http://localhost:5001/api/users/${initialUser.id}`);
         if (resUser.data) {
           setUserInfo(resUser.data);
           localStorage.setItem('user', JSON.stringify(resUser.data));
         }
 
-        // 2. Tải toàn bộ Lịch hẹn của Bệnh Nhân
         const resApts = await axios.get(`http://localhost:5001/api/patient/appointments/${initialUser.id}`);
         setMyAppointments(resApts.data);
       }
@@ -111,7 +106,7 @@ function PatientDashboard() {
         userId: userInfo.id
       });
 
-      alert(" Đặt lịch khám bệnh thành công! Phiếu đặt của bạn đang chờ phòng khám duyệt.");
+      alert("🎉 Đặt lịch khám bệnh thành công! Phiếu đặt của bạn đang chờ phòng khám duyệt.");
       setSymptoms('');
       fetchData();
       setActiveTab('my-appointments');
@@ -143,7 +138,6 @@ function PatientDashboard() {
 
   return (
     <div className="admin-layout">
-      {/* Sidebar Bệnh Nhân */}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <div className="brand-icon-box">
@@ -189,12 +183,11 @@ function PatientDashboard() {
           >
             <div className="nav-item-content">
               <User size={18} color={activeTab === 'profile' ? '#5a5a40' : '#8a8a70'} />
-              <span>Hồ Sơ Cá Nhân</span>
+              <span>Hồ Sơ & Đổi Mật Khẩu</span>
             </div>
           </button>
         </nav>
 
-        {/* Footer User */}
         <div className="sidebar-footer">
           <div className="user-avatar">
             {userInfo.full_name ? userInfo.full_name.charAt(0).toUpperCase() : 'P'}
@@ -211,13 +204,12 @@ function PatientDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="admin-main-content">
         <header className="admin-header-bar">
           <div style={{ fontSize: '18px', fontWeight: '700', color: '#5a5a40' }}>
             {activeTab === 'my-appointments' && ' Lịch Sử Phiếu Đặt Khám Của Tôi'}
             {activeTab === 'booking' && ' Đăng Ký Khám Bệnh Trực Tuyến'}
-            {activeTab === 'profile' && ' Hồ Sơ & Thẻ BHYT Cá Nhân'}
+            {activeTab === 'profile' && ' Quản Lý Hồ Sơ Cá Nhân & Đổi Mật Khẩu'}
           </div>
 
           <div className="header-actions">
@@ -228,7 +220,6 @@ function PatientDashboard() {
         </header>
 
         <div className="admin-body">
-          {/* TAB 1: LỊCH HẸN CỦA TÔI */}
           {activeTab === 'my-appointments' && (
             <div className="natural-section-card">
               <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Phiếu Đặt Lịch Của Tôi</h3>
@@ -258,8 +249,8 @@ function PatientDashboard() {
                         </td>
                         <td>{apt.symptoms}</td>
                         <td>
-                          <span className={`badge-status ${apt.status === 'confirmed' ? 'active' : 'pending'}`}>
-                            {apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
+                          <span className={`badge-status ${apt.status === 'completed' ? 'active' : apt.status === 'confirmed' ? 'active' : 'pending'}`}>
+                            {apt.status === 'completed' ? 'Khám xong' : apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
                           </span>
                         </td>
                         <td>
@@ -286,10 +277,9 @@ function PatientDashboard() {
             </div>
           )}
 
-          {/* TAB 2: ĐẶT LỊCH KHÁM MỚI */}
           {activeTab === 'booking' && (
             <div className="natural-section-card" style={{ maxWidth: '720px', margin: '0 auto' }}>
-              <h3 className="section-title-garamond" style={{ marginBottom: '6px' }}> Đăng Ký Khám Bệnh</h3>
+              <h3 className="section-title-garamond" style={{ marginBottom: '6px' }}>📝 Đăng Ký Khám Bệnh</h3>
               <p style={{ fontSize: '13px', color: '#8a8a70', marginBottom: '24px' }}>
                 Chọn chuyên khoa, bác sĩ và thời gian khám mong muốn. Phiếu hẹn sẽ được gửi đến hệ thống phòng khám.
               </p>
@@ -388,26 +378,8 @@ function PatientDashboard() {
             </div>
           )}
 
-          {/* TAB 3: HỒ SƠ CÁ NHÂN */}
           {activeTab === 'profile' && (
-            <div className="natural-section-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-              <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Hồ Sơ Bệnh Nhân</h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#fdfbf7', borderRadius: '10px', border: '1px solid #e6e6df' }}>
-                  <span style={{ color: '#8a8a70' }}>Họ và tên:</span>
-                  <span style={{ fontWeight: '700', color: '#5a5a40' }}>{userInfo.full_name}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#fdfbf7', borderRadius: '10px', border: '1px solid #e6e6df' }}>
-                  <span style={{ color: '#8a8a70' }}>Email đăng ký:</span>
-                  <span style={{ fontWeight: '600', color: '#2d2d2a' }}>{userInfo.email || 'Chưa cập nhật'}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', backgroundColor: '#fdfbf7', borderRadius: '10px', border: '1px solid #e6e6df' }}>
-                  <span style={{ color: '#8a8a70' }}>Vai trò tài khoản:</span>
-                  <span className="badge-status active">Bệnh Nhân (Patient)</span>
-                </div>
-              </div>
-            </div>
+            <ProfileView />
           )}
         </div>
       </div>
