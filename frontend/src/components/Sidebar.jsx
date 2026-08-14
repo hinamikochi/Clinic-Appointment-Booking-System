@@ -5,6 +5,7 @@ import {
   Stethoscope, 
   Building2, 
   CalendarDays,
+  User,
   ShieldCheck,
   LogOut,
   ChevronRight
@@ -16,12 +17,12 @@ export function Sidebar({ activeTab, setActiveTab }) {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : { full_name: 'Super Admin' };
 
-  // ĐÃ BỔ SUNG TAB QUẢN LÝ LỊCH HẸN
   const navItems = [
     { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
     { id: 'appointments', label: 'Quản Lý Lịch Hẹn', icon: CalendarDays },
     { id: 'doctors', label: 'Quản Lý Bác Sĩ', icon: Stethoscope },
     { id: 'specialties', label: 'Quản Lý Chuyên Khoa', icon: Building2 },
+    { id: 'profile', label: 'Hồ Sơ & Đổi Mật Khẩu', icon: User },
   ];
 
   const handleLogout = () => {
@@ -32,7 +33,6 @@ export function Sidebar({ activeTab, setActiveTab }) {
 
   return (
     <aside className="admin-sidebar">
-      {/* Brand Header */}
       <div className="sidebar-header">
         <div className="brand-icon-box">
           <Stethoscope size={22} />
@@ -45,7 +45,6 @@ export function Sidebar({ activeTab, setActiveTab }) {
         </div>
       </div>
 
-      {/* Navigation Links */}
       <nav className="sidebar-nav">
         <div className="nav-section-title">QUẢN LÝ HỆ THỐNG</div>
         {navItems.map((item) => {
@@ -69,7 +68,6 @@ export function Sidebar({ activeTab, setActiveTab }) {
         })}
       </nav>
 
-      {/* User Footer */}
       <div className="sidebar-footer">
         <div className="user-avatar">
           {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'A'}
