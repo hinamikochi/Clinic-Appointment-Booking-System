@@ -332,7 +332,7 @@ app.get('/api/doctor/appointments/:doctorId', async (req, res) => {
     }
 });
 
-// API: Bác sĩ Lưu Hồ sơ bệnh án & Kết quả đơn thuốc (Chuyển trạng thái 'completed')
+// API: Bác sĩ Lưu Hồ sơ bệnh án & Kết quả đơn thuốc
 app.post('/api/medical-records', async (req, res) => {
     try {
         const { appointmentId, patientId, doctorId, diagnosis, prescription, advice, re_visit_date } = req.body;
@@ -363,6 +363,61 @@ app.post('/api/medical-records', async (req, res) => {
     } catch (error) {
         console.error('Lỗi lưu hồ sơ bệnh án:', error);
         res.status(500).json({ message: 'Lỗi server khi lưu bệnh án' });
+    }
+});
+
+// API: Cập nhật thông tin cá nhân
+app.put('/api/users/profile/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { full_name, phone, gender, address } = req.body;
+        const user = await User.findByPk(id);
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+        await user.update({
+            full_name: full_name || user.full_name,
+            phone: phone || user.phone,
+            gender: gender || user.gender,
+            address: address || user.address
+        });
+        res.json({ 
+            message: 'Cập nhật thông tin cá nhân thành công!',
+            user: {
+                id: user.id,
+                full_name: user.full_name,
+                email: user.email,
+                phone: user.phone,
+                gender: user.gender,
+                address: user.address,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Lỗi cập nhật hồ sơ:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật hồ sơ' });
+    }
+});
+
+// API: Đổi Mật Khẩu (Kiểm tra mật khẩu cũ & mã hóa mật khẩu mới)
+app.put('/api/users/change-password/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { old_password, new_password } = req.body;
+        if (!old_password || !new_password) {
+            return res.status(400).json({ message: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới!' });
+        }
+        const user = await User.findByPk(id);
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+        const isMatch = await bcrypt.compare(old_password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(new_password, salt);
+        await user.update({ password: hashedPassword });
+        res.json({ message: 'Đổi mật khẩu thành công!' });
+    } catch (error) {
+        console.error('Lỗi đổi mật khẩu:', error);
+        res.status(500).json({ message: 'Lỗi server khi đổi mật khẩu' });
     }
 });
 
