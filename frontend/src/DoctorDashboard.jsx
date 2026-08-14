@@ -4,22 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Stethoscope, 
   CalendarDays, 
-  ClipboardList, 
   CheckCircle2, 
   User, 
   LogOut, 
   Home, 
   FileText, 
   Pill, 
-  Clock, 
-  Search,
-  Building2
+  Search
 } from 'lucide-react';
+import ProfileView from './components/ProfileView';
 import './AdminDashboard.css';
 
 function DoctorDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' | 'examination' | 'completed'
+  const [activeTab, setActiveTab] = useState('appointments');
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : { id: 0, full_name: 'Bác Sĩ', email: '' };
@@ -28,7 +26,6 @@ function DoctorDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // Form Bệnh Án
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
   const [advice, setAdvice] = useState('');
@@ -36,7 +33,6 @@ function DoctorDashboard() {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. Tải thông tin Bác sĩ & Danh sách ca khám
   const fetchData = async () => {
     try {
       if (!user.id) return;
@@ -56,7 +52,6 @@ function DoctorDashboard() {
     fetchData();
   }, []);
 
-  // Mở Modal Khám Bệnh cho bệnh nhân
   const handleOpenExamination = (apt) => {
     setSelectedAppointment(apt);
     if (apt.MedicalRecord) {
@@ -73,7 +68,6 @@ function DoctorDashboard() {
     setActiveTab('examination');
   };
 
-  // Lưu Bệnh Án & Hoàn Thành Ca Khám
   const handleSaveMedicalRecord = async (e) => {
     e.preventDefault();
     if (!selectedAppointment || !diagnosis.trim()) {
@@ -120,7 +114,6 @@ function DoctorDashboard() {
 
   return (
     <div className="admin-layout">
-      {/* Sidebar Bác Sĩ */}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <div className="brand-icon-box">
@@ -159,9 +152,18 @@ function DoctorDashboard() {
               <span>Lịch Sử Đã Khám</span>
             </div>
           </button>
+
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`sidebar-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+          >
+            <div className="nav-item-content">
+              <User size={18} color={activeTab === 'profile' ? '#5a5a40' : '#8a8a70'} />
+              <span>Hồ Sơ & Đổi Mật Khẩu</span>
+            </div>
+          </button>
         </nav>
 
-        {/* Footer Bác Sĩ */}
         <div className="sidebar-footer">
           <div className="user-avatar">
             {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'B'}
@@ -180,13 +182,13 @@ function DoctorDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="admin-main-content">
         <header className="admin-header-bar">
           <div style={{ fontSize: '18px', fontWeight: '700', color: '#5a5a40' }}>
             {activeTab === 'appointments' && ' Danh Sách Bệnh Nhân Đăng Ký Khám'}
             {activeTab === 'examination' && ` Khám Bệnh: ${selectedAppointment?.patient_name || ''}`}
             {activeTab === 'completed' && ' Lịch Sử Ca Khám Đã Hoàn Thành'}
+            {activeTab === 'profile' && ' Quản Lý Hồ Sơ Cá Nhân & Đổi Mật Khẩu'}
           </div>
 
           <div className="header-actions">
@@ -197,10 +199,8 @@ function DoctorDashboard() {
         </header>
 
         <div className="admin-body">
-          {/* TAB 1: DANH SÁCH CA KHÁM */}
           {activeTab === 'appointments' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Search Bar */}
               <div style={{ backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Search size={18} color="#8a8a70" />
                 <input 
@@ -212,7 +212,6 @@ function DoctorDashboard() {
                 />
               </div>
 
-              {/* Bảng Ca Khám */}
               <div className="natural-section-card">
                 <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Ca Khám Chờ Tiếp Nhận</h3>
 
@@ -271,7 +270,6 @@ function DoctorDashboard() {
             </div>
           )}
 
-          {/* TAB 2: KHÁM BỆNH & KÊ ĐƠN THUỐC */}
           {activeTab === 'examination' && selectedAppointment && (
             <div className="natural-section-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
               <div style={{ backgroundColor: '#fdfbf7', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -295,7 +293,7 @@ function DoctorDashboard() {
                   </label>
                   <textarea 
                     rows={3} required
-                    placeholder="Nhập chi tiết chẩn đoán lâm sàng (VD: Viêm họng cấp, Viêm dạ dày HP+...)"
+                    placeholder="Nhập chi tiết chẩn đoán lâm sàng..."
                     value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)}
                     style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #e6e6df', outline: 'none', fontFamily: 'inherit', fontSize: '13px' }}
                   />
@@ -307,7 +305,7 @@ function DoctorDashboard() {
                   </label>
                   <textarea 
                     rows={4}
-                    placeholder="Ví dụ:&#10;1. Paracetamol 500mg - 10 viên (Uống 2 viên/ngày sau ăn)&#10;2. Amoxicillin 500mg - 14 viên (Uống sáng 1 viên, tối 1 viên)"
+                    placeholder="Kê danh sách thuốc..."
                     value={prescription} onChange={(e) => setPrescription(e.target.value)}
                     style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #e6e6df', outline: 'none', fontFamily: 'inherit', fontSize: '13px' }}
                   />
@@ -319,7 +317,7 @@ function DoctorDashboard() {
                       Lời Khuyên & Dặn Dò
                     </label>
                     <input 
-                      type="text" placeholder="Uống nhiều nước ấm, nghỉ ngơi hợp lý..."
+                      type="text" placeholder="Dặn dò sinh hoạt..."
                       value={advice} onChange={(e) => setAdvice(e.target.value)}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none', fontSize: '13px' }}
                     />
@@ -341,14 +339,13 @@ function DoctorDashboard() {
                     Hủy Bỏ
                   </button>
                   <button type="submit" className="btn-primary-natural" disabled={saving}>
-                    {saving ? 'Đang Lưu Bệnh Án...' : 'Lưu Hồ Sơ & Hoàn Thành Ca Khám'}
+                    {saving ? 'Đang Lưu...' : 'Lưu Hồ Sơ & Hoàn Thành Ca Khám'}
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* TAB 3: LỊCH SỬ ĐÃ KHÁM */}
           {activeTab === 'completed' && (
             <div className="natural-section-card">
               <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Ca Khám Đã Hoàn Thành</h3>
@@ -394,6 +391,10 @@ function DoctorDashboard() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {activeTab === 'profile' && (
+            <ProfileView />
           )}
         </div>
       </div>
