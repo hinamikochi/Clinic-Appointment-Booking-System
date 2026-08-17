@@ -6,7 +6,6 @@ import { Stethoscope, Building2, CalendarDays, Users, CalendarX } from 'lucide-r
 export function OverviewView({ docCount, specCount, setActiveTab }) {
   const [appointments, setAppointments] = useState([]);
 
-  // Tải danh sách lịch hẹn thực tế từ Backend
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -69,8 +68,8 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
                     <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div>
                   </td>
                   <td>
-                    <span className={`badge-status ${apt.status === 'confirmed' ? 'active' : 'pending'}`}>
-                      {apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
+                    <span className={`badge-status ${apt.status === 'completed' ? 'active' : apt.status === 'confirmed' ? 'active' : 'pending'}`}>
+                      {apt.status === 'completed' ? 'Đã khám xong' : apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
                     </span>
                   </td>
                 </tr>
