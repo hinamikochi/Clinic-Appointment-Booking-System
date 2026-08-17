@@ -137,7 +137,7 @@ app.post('/api/appointments', async (req, res) => {
     }
 });
 
-// API: Lấy Lịch Hẹn Của Bệnh Nhân (Tìm thông minh theo userId HOẶC theo Tên Bệnh Nhân)
+// API: Lấy Lịch Hẹn Của Bệnh Nhân 
 app.get('/api/patient/appointments/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -145,7 +145,6 @@ app.get('/api/patient/appointments/:userId', async (req, res) => {
         
         let whereCondition = { userId };
         if (user) {
-            // Tự động tìm cả những lịch hẹn khớp với Tên Bệnh Nhân (VD: Trần Văn Bình)
             whereCondition = {
                 [Op.or]: [
                     { userId: user.id },
@@ -153,11 +152,11 @@ app.get('/api/patient/appointments/:userId', async (req, res) => {
                 ]
             };
         }
-
         const appointments = await Appointment.findAll({
             where: whereCondition,
             include: [
                 { model: Specialty, attributes: ['id', 'name'] },
+                { model: MedicalRecord }, 
                 { 
                     model: DoctorInfo, 
                     attributes: ['id', 'degree'],
@@ -193,6 +192,7 @@ app.get('/api/appointments', async (req, res) => {
         const appointments = await Appointment.findAll({
             include: [
                 { model: Specialty, attributes: ['id', 'name'] },
+                { model: MedicalRecord }, 
                 { 
                     model: DoctorInfo, 
                     attributes: ['id', 'degree'],
@@ -203,6 +203,7 @@ app.get('/api/appointments', async (req, res) => {
         });
         res.json(appointments);
     } catch (error) {
+        console.error('Lỗi lấy danh sách lịch hẹn:', error);
         res.status(500).json({ message: 'Lỗi lấy danh sách lịch hẹn' });
     }
 });
