@@ -7,7 +7,11 @@ import {
   User, 
   LogOut, 
   Stethoscope, 
-  Home
+  Home,
+  FileText,
+  Pill,
+  Calendar,
+  X
 } from 'lucide-react';
 import ProfileView from './components/ProfileView';
 import './AdminDashboard.css';
@@ -34,8 +38,14 @@ function PatientDashboard() {
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Lịch hẹn cá nhân của tôi
   const [myAppointments, setMyAppointments] = useState([]);
 
+  // State Modal Xem Đơn Thuốc / Kết Quả Khám
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showRecordModal, setShowRecordModal] = useState(false);
+
+  // Tải dữ liệu tự động
   const fetchData = async () => {
     try {
       const resSpecs = await axios.get('http://localhost:5001/api/specialties');
@@ -58,6 +68,7 @@ function PatientDashboard() {
           localStorage.setItem('user', JSON.stringify(resUser.data));
         }
 
+        // Tải danh sách lịch hẹn kèm theo thông tin Bệnh án (MedicalRecord)
         const resApts = await axios.get(`http://localhost:5001/api/patient/appointments/${initialUser.id}`);
         setMyAppointments(resApts.data);
       }
@@ -128,6 +139,15 @@ function PatientDashboard() {
     }
   };
 
+  // Mở Modal xem Đơn Thuốc & Kết Quả Khám
+  const handleOpenRecordModal = (apt) => {
+    setSelectedRecord({
+      appointment: apt,
+      medicalRecord: apt.MedicalRecord
+    });
+    setShowRecordModal(true);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -138,6 +158,7 @@ function PatientDashboard() {
 
   return (
     <div className="admin-layout">
+      {/* Sidebar Bệnh Nhân */}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <div className="brand-icon-box">
@@ -188,6 +209,7 @@ function PatientDashboard() {
           </button>
         </nav>
 
+        {/* Footer User */}
         <div className="sidebar-footer">
           <div className="user-avatar">
             {userInfo.full_name ? userInfo.full_name.charAt(0).toUpperCase() : 'P'}
@@ -204,6 +226,7 @@ function PatientDashboard() {
         </div>
       </aside>
 
+      {/* Main Content */}
       <div className="admin-main-content">
         <header className="admin-header-bar">
           <div style={{ fontSize: '18px', fontWeight: '700', color: '#5a5a40' }}>
@@ -220,6 +243,7 @@ function PatientDashboard() {
         </header>
 
         <div className="admin-body">
+          {/* TAB 1: LỊCH HẸN CỦA TÔI */}
           {activeTab === 'my-appointments' && (
             <div className="natural-section-card">
               <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Phiếu Đặt Lịch Của Tôi</h3>
@@ -254,12 +278,24 @@ function PatientDashboard() {
                           </span>
                         </td>
                         <td>
+                          {/* NÚT 1: HỦY PHIẾU NẾU DẠNG CHỜ DUYỆT */}
                           {apt.status === 'pending' && (
                             <button 
                               onClick={() => handleCancelAppointment(apt.id)}
                               style={{ background: 'none', border: 'none', color: '#b84343', cursor: 'pointer', fontSize: '13px' }}
                             >
                               Hủy Phiếu
+                            </button>
+                          )}
+
+                          {/* NÚT 2: XEM ĐƠN THUỐC & KẾT QUẢ NẾU ĐÃ KHÁM XONG */}
+                          {apt.status === 'completed' && (
+                            <button 
+                              onClick={() => handleOpenRecordModal(apt)}
+                              className="btn-primary-natural"
+                              style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <FileText size={14} /> Xem Chẩn Đoán
                             </button>
                           )}
                         </td>
@@ -277,9 +313,10 @@ function PatientDashboard() {
             </div>
           )}
 
+          {/* TAB 2: ĐẶT LỊCH KHÁM MỚI */}
           {activeTab === 'booking' && (
             <div className="natural-section-card" style={{ maxWidth: '720px', margin: '0 auto' }}>
-              <h3 className="section-title-garamond" style={{ marginBottom: '6px' }}>📝 Đăng Ký Khám Bệnh</h3>
+              <h3 className="section-title-garamond" style={{ marginBottom: '6px' }}> Đăng Ký Khám Bệnh</h3>
               <p style={{ fontSize: '13px', color: '#8a8a70', marginBottom: '24px' }}>
                 Chọn chuyên khoa, bác sĩ và thời gian khám mong muốn. Phiếu hẹn sẽ được gửi đến hệ thống phòng khám.
               </p>
@@ -378,11 +415,123 @@ function PatientDashboard() {
             </div>
           )}
 
+          {/* TAB 3: HỒ SƠ CÁ NHÂN & ĐỔI MẬT KHẨU */}
           {activeTab === 'profile' && (
             <ProfileView />
           )}
         </div>
       </div>
+
+      {/* MODAL XEM ĐƠN THUỐC & KẾT QUẢ KHÁM BỆNH */}
+      {showRecordModal && selectedRecord && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff', borderRadius: '24px', width: '100%', maxWidth: '650px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.2)', border: '1px solid #e6e6df', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease-in-out'
+          }}>
+            {/* Header Modal */}
+            <div style={{
+              backgroundColor: '#5a5a40', color: '#ffffff', padding: '20px 24px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'serif' }}>
+                   KẾT QUẢ KHÁM BỆNH & ĐƠN THUỐC
+                </div>
+                <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
+                  Mã phiếu: LH-{selectedRecord.appointment.id} • Ngày khám: {selectedRecord.appointment.appointment_date}
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowRecordModal(false)}
+                style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content Body Modal */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '75vh', overflowY: 'auto' }}>
+              
+              {/* Thẻ Bác sĩ & Chuyên Khoa */}
+              <div style={{ backgroundColor: '#fdfbf7', padding: '14px 18px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#8a8a70', textTransform: 'uppercase', fontWeight: '700' }}>Bác sĩ khám</div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#2d2d2a', marginTop: '2px' }}>
+                    {selectedRecord.appointment.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', color: '#8a8a70', textTransform: 'uppercase', fontWeight: '700' }}>Chuyên khoa</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#5a5a40', marginTop: '2px' }}>
+                    {selectedRecord.appointment.Specialty?.name || 'Đa khoa'}
+                  </div>
+                </div>
+              </div>
+
+              {selectedRecord.medicalRecord ? (
+                <>
+                  {/* 1. CHẨN ĐOÁN BỆNH */}
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <FileText size={16} /> CHẨN ĐOÁN CỦA BÁC SĨ
+                    </div>
+                    <div style={{ backgroundColor: '#fdfbf7', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e6e6df', fontSize: '13px', color: '#2d2d2a', fontWeight: '600', lineHeight: '1.5' }}>
+                      {selectedRecord.medicalRecord.diagnosis}
+                    </div>
+                  </div>
+
+                  {/* 2. ĐƠN THUỐC & LIỀU DÙNG */}
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <Pill size={16} /> ĐƠN THUỐC & HƯỚNG DẪN LIỀU DÙNG
+                    </div>
+                    <div style={{ backgroundColor: '#ffffff', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e6e6df', fontSize: '13px', color: '#2d2d2a', whiteSpace: 'pre-line', lineHeight: '1.6' }}>
+                      {selectedRecord.medicalRecord.prescription || 'Không có đơn thuốc chỉ định.'}
+                    </div>
+                  </div>
+
+                  {/* 3. LỜI KHUYÊN & NGÀY TÁI KHÁM */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px' }}>Lời khuyên & Dặn dò</div>
+                      <div style={{ fontSize: '13px', color: '#2d2d2a', fontStyle: 'italic' }}>
+                        "{selectedRecord.medicalRecord.advice || 'Nghỉ ngơi và uống đủ nước ấm.'}"
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={13} /> Ngày hẹn tái khám
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#b84343' }}>
+                        {selectedRecord.medicalRecord.re_visit_date || 'Không có hẹn tái khám'}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#8a8a70' }}>
+                  Phiếu hẹn đã hoàn thành nhưng chưa có chi tiết đơn thuốc được ghi nhận.
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer Modal */}
+            <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary-natural" onClick={() => setShowRecordModal(false)}>
+                Đóng Cửa Sổ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
