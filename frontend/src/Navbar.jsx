@@ -21,7 +21,7 @@ function Navbar() {
             <Stethoscope size={18} color="#ffffff" />
           </div>
           <span className="brand-text-garamond">
-            MediNatural <span className="brand-tag-mini">CLINIC</span>
+            MyClinic <span className="brand-tag-mini">MEDICAL</span>
           </span>
         </Link>
       </div>

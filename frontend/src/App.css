@@ -1,8 +1,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-image: url('https://plus.unsplash.com/premium_photo-1668487827029-2bd54133c303?q=80&w=2012&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-  background-size: cover;
+  background-image: linear-gradient(rgba(45, 45, 42, 0.45), rgba(45, 45, 42, 0.55)), url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2000&auto=format&fit=crop');
   background-position: center;
   background-attachment: fixed;
   font-family: 'Inter', sans-serif;
