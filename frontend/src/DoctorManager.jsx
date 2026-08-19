@@ -9,10 +9,10 @@ import {
   UserCheck
 } from 'lucide-react';
 
-function DoctorManager({ onUpdate }) {
+function DoctorManager({ onUpdate, initialSearchQuery }) {
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -27,6 +27,13 @@ function DoctorManager({ onUpdate }) {
     consultationFee: '',
     description: ''
   });
+
+  // Tự động nạp từ khóa lọc khi chọn từ Header
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const fetchData = async () => {
     try {
@@ -49,66 +56,72 @@ function DoctorManager({ onUpdate }) {
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
+    if (!formData.full_name || !formData.email || !formData.password || !formData.specialtyId) {
+      alert("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+      return;
+    }
+
     try {
       await axios.post('http://localhost:5001/api/admin/doctors', formData);
-      alert('✅ Tạo tài khoản Bác sĩ thành công!');
+      alert("🎉 Tạo tài khoản Bác sĩ thành công!");
       setShowAddModal(false);
       setFormData({
-        full_name: '', email: '', password: '',
-        specialtyId: specialties[0]?.id || '', degree: 'Bác sĩ chuyên khoa',
+        full_name: '',
+        email: '',
+        password: '',
+        specialtyId: specialties[0]?.id || '',
+        degree: 'Bác sĩ chuyên khoa',
         image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300',
-        roomNumber: '', consultationFee: '', description: ''
+        roomNumber: '',
+        consultationFee: '',
+        description: ''
       });
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert(err.response?.data?.message || 'Không thể tạo tài khoản Bác sĩ');
+      alert(err.response?.data?.message || "Lỗi khi tạo bác sĩ");
     }
   };
 
   const handleDeleteDoctor = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xóa bác sĩ này?')) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bác sĩ này khỏi hệ thống?")) return;
     try {
-      await axios.delete(`http://localhost:5001/api/doctors/${id}`);
+      await axios.delete(`http://localhost:5001/api/admin/doctors/${id}`);
+      alert("Đã xóa bác sĩ thành công!");
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert('Không thể xóa bác sĩ này');
+      alert(err.response?.data?.message || "Lỗi khi xóa bác sĩ");
     }
   };
 
-  const filteredDoctors = doctors.filter((doc) => {
-    if (selectedSpecialty !== 'all' && String(doc.specialtyId) !== String(selectedSpecialty)) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const name = doc.User?.full_name?.toLowerCase() || '';
-      const email = doc.User?.email?.toLowerCase() || '';
-      return name.includes(q) || email.includes(q);
-    }
-    return true;
+  const filteredDoctors = doctors.filter(doc => {
+    const matchesSearch = doc.User?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          doc.User?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpec = selectedSpecialty === 'all' || String(doc.specialtyId) === String(selectedSpecialty);
+    return matchesSearch && matchesSpec;
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
       <div className="section-header-flex" style={{ backgroundColor: '#ffffff', padding: '20px 24px', borderRadius: '20px', border: '1px solid #e6e6df' }}>
         <div>
           <h2 className="section-title-garamond" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCheck size={24} color="#5a5a40" /> Quản Lý Danh Sách Bác Sĩ
+            <Stethoscope size={24} color="#5a5a40" /> Quản Lý Danh Sách Bác Sĩ
           </h2>
           <p style={{ fontSize: '13px', color: '#8a8a70', margin: '4px 0 0 0' }}>
-            Tổng số: {doctors.length} bác sĩ trong cơ sở dữ liệu
+            Tổng số: <b>{doctors.length}</b> bác sĩ trong cơ sở dữ liệu
           </p>
         </div>
 
         <button className="btn-primary-natural" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> Thêm Bác Sĩ Mới
+          <Plus size={16} /> + Thêm Bác Sĩ Mới
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div style={{ display: 'flex', gap: '12px', backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df' }}>
-        <div className="header-search" style={{ flex: 1, width: 'auto' }}>
+      {/* Filter Controls */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="header-search" style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #e6e6df' }}>
           <Search size={16} color="#8a8a70" />
           <input 
             type="text" 
@@ -132,55 +145,61 @@ function DoctorManager({ onUpdate }) {
 
       {/* Doctor Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-        {filteredDoctors.map((doc) => (
-          <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                {/* Ảnh Đại Diện Bác Sĩ */}
-                <img 
-                  src={doc.image || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300'} 
-                  alt={doc.User?.full_name}
-                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e6e6df' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <span className="brand-tag">{doc.Specialty?.name || 'Chuyên Khoa'}</span>
-                  <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#2d2d2a', margin: '4px 0 2px 0' }}>
-                    {doc.User?.full_name}
-                  </h3>
-                  <div style={{ fontSize: '12px', color: '#8a8a70' }}>{doc.degree}</div>
+        {filteredDoctors.length > 0 ? (
+          filteredDoctors.map((doc) => (
+            <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                  <img 
+                    src={doc.image || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300'} 
+                    alt={doc.User?.full_name}
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e6e6df' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <span className="brand-tag">{doc.Specialty?.name || 'Chuyên Khoa'}</span>
+                    <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#2d2d2a', margin: '4px 0 2px 0' }}>
+                      {doc.User?.full_name}
+                    </h3>
+                    <div style={{ fontSize: '12px', color: '#8a8a70' }}>{doc.degree}</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#8a8a70' }}>Email:</span>
+                    <span style={{ fontWeight: '500', color: '#2d2d2a' }}>{doc.User?.email}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#8a8a70' }}>Số phòng khám:</span>
+                    <span style={{ fontWeight: '600', color: '#5a5a40' }}>{doc.roomNumber || 'Chưa cập nhật'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#8a8a70' }}>Giá khám niêm yết:</span>
+                    <span style={{ fontWeight: '600', color: '#5a5a40' }}>
+                      {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Chi tiết thông tin */}
-              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#8a8a70' }}>Email:</span>
-                  <span style={{ fontWeight: '500', color: '#2d2d2a' }}>{doc.User?.email}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#8a8a70' }}>Số phòng khám:</span>
-                  <span style={{ fontWeight: '600', color: '#5a5a40' }}>{doc.roomNumber || 'Chưa cập nhật'}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#8a8a70' }}>Giá khám niêm yết:</span>
-                  <span style={{ fontWeight: '600', color: '#5a5a40' }}>
-                    {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật'}
-                  </span>
-                </div>
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="badge-status active" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <UserCheck size={12} /> Đang hoạt động
+                </span>
+                <button 
+                  onClick={() => handleDeleteDoctor(doc.id)}
+                  style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  <Trash2 size={14} /> Xóa
+                </button>
               </div>
             </div>
-
-            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="badge-status active">Đang hoạt động</span>
-              <button 
-                onClick={() => handleDeleteDoctor(doc.id)}
-                style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer' }}
-              >
-                <Trash2 size={14} /> Xóa
-              </button>
-            </div>
+          ))
+        ) : (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '36px', color: '#8a8a70', backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e6e6df' }}>
+            Không tìm thấy bác sĩ nào phù hợp với từ khóa "{searchQuery}"
           </div>
-        ))}
+        )}
       </div>
 
       {/* Modal Thêm Bác Sĩ */}
