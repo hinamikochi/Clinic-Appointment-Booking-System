@@ -145,18 +145,19 @@ app.get('/api/patient/appointments/:userId', async (req, res) => {
         
         let whereCondition = { userId };
         if (user) {
-            whereCondition = {
-                [Op.or]: [
-                    { userId: user.id },
-                    { patient_name: user.full_name }
-                ]
-            };
+            const orConditions = [{ userId: user.id }];
+            if (user.phone) {
+                orConditions.push({ patient_phone: user.phone });
+            } else {
+                orConditions.push({ patient_name: user.full_name });
+            }
+            whereCondition = { [Op.or]: orConditions };
         }
         const appointments = await Appointment.findAll({
             where: whereCondition,
             include: [
                 { model: Specialty, attributes: ['id', 'name'] },
-                { model: MedicalRecord }, 
+                { model: MedicalRecord },
                 { 
                     model: DoctorInfo, 
                     attributes: ['id', 'degree'],
