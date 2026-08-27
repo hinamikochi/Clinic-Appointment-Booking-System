@@ -125,6 +125,16 @@ export function AppointmentsView() {
                       </div>
                     )}
 
+                    {/* 2. XOÁ LỊCH HẸN KHI Ở TRẠNG THÁI ĐÃ DUYỆT:*/}
+                      {apt.status === 'confirmed' && (
+                        <button 
+                          onClick={() => handleUpdateStatus(apt.id, 'cancelled')}
+                          style={{ padding: '4px 10px', borderRadius: '8px', border: '1px solid #b84343', backgroundColor: '#fdf2f2', color: '#b84343', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}
+                        >
+                          Hủy Lịch Hẹn
+                        </button>
+                      )}
+                    
                     {/* THAO TÁC 2: NÚT XEM KẾT QUẢ KHÁM NẾU ĐÃ KHÁM XONG */}
                     {apt.status === 'completed' && (
                       <button 
