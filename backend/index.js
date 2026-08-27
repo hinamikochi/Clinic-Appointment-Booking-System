@@ -141,6 +141,24 @@ app.post('/api/appointments', async (req, res) => {
             return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin bắt buộc!' });
         }
 
+        // Kiểm tra xem bác sĩ đã có lịch hẹn trùng vào ngày và khung giờ đó chưa
+        const parsedDoctorId = Number(doctorId);
+        const existingApt = await Appointment.findOne({
+            where: {
+                doctorId: parsedDoctorId,
+                appointment_date: String(appointment_date).trim(),
+                time_slot: String(time_slot).trim(),
+                status: { [Op.ne]: 'cancelled' }
+            }
+        });
+
+        if (existingApt) {
+            return res.status(400).json({ 
+                message: `Bác sĩ đã có lịch hẹn vào khung giờ ${time_slot} ngày ${appointment_date}. Vui lòng chọn khung giờ hoặc ngày khác!` 
+            });
+        }
+
+        // Tạo phiếu hẹn mới 
         const newAppointment = await Appointment.create({
             patient_name,
             patient_phone,
