@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { CalendarDays, FileText, Pill, Calendar, X } from 'lucide-react';
+import { CalendarDays, FileText, Pill, Calendar, X, Search, Printer } from 'lucide-react';
+import { printPrescription } from '../utils/printHelper';
 
 export function AppointmentsView() {
   const [appointments, setAppointments] = useState([]);
@@ -39,6 +40,7 @@ export function AppointmentsView() {
     });
     setShowRecordModal(true);
   };
+
 
   const filtered = appointments.filter(a => {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
@@ -239,7 +241,15 @@ export function AppointmentsView() {
               )}
             </div>
 
-            <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                onClick={() => printPrescription(selectedRecord.appointment, selectedRecord.medicalRecord)}
+                className="btn-primary-natural"
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                  <Printer size={16} />  In Đơn Thuốc PDF
+              </button>
+
               <button className="btn-secondary-natural" onClick={() => setShowRecordModal(false)}>
                 Đóng Cửa Sổ
               </button>

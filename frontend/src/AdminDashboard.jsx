@@ -8,7 +8,8 @@ import DoctorManager from './DoctorManager';
 import AppointmentsView from './components/AppointmentsView';
 import ProfileView from './components/ProfileView';
 import BookingModal from './BookingModal';
-import { FileText, Pill, Calendar, X } from 'lucide-react';
+import { FileText, Pill, Calendar, X, Printer } from 'lucide-react';
+import { printPrescription } from './utils/printHelper';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
@@ -42,18 +43,17 @@ function AdminDashboard() {
     fetchCounts();
   }, []);
 
-  // Xử lý khi Admin chọn 1 mục cụ thể từ thanh Tìm Kiếm
   const handleSelectSearchItem = (tab, queryText, aptObj) => {
     setActiveTab(tab);
     setInitialSearchQuery(queryText || '');
 
-    // Nếu chọn bệnh nhân thì mở cửa sổ xem bệnh án
     if (aptObj) {
       setSelectedAppointmentRecord(aptObj);
       setShowSearchRecordModal(true);
     }
   };
 
+  
   return (
     <div className="admin-layout">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -158,7 +158,7 @@ function AdminDashboard() {
                       <Pill size={16} /> ĐƠN THUỐC KÊ ĐƠN
                     </div>
                     <div style={{ backgroundColor: '#ffffff', padding: '12px 14px', borderRadius: '12px', border: '1px solid #e6e6df', fontSize: '13px', color: '#2d2d2a', whiteSpace: 'pre-line' }}>
-                      {selectedAppointmentRecord.MedicalRecord.prescription || 'Không có đơn thuốc.'}
+                      {selectedRecord.medicalRecord?.prescription || selectedAppointmentRecord.MedicalRecord.prescription || 'Không có đơn thuốc.'}
                     </div>
                   </div>
                 </>
@@ -169,7 +169,15 @@ function AdminDashboard() {
               )}
             </div>
 
-            <div style={{ backgroundColor: '#fdfbf7', padding: '14px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ backgroundColor: '#fdfbf7', padding: '14px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                onClick={() => printPrescription(selectedAppointmentRecord, selectedAppointmentRecord?.MedicalRecord)}
+                className="btn-primary-natural"
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}  
+              >
+                <Printer size={16} />  In Kết Quả Khám
+              </button>
+
               <button className="btn-secondary-natural" onClick={() => setShowSearchRecordModal(false)}>
                 Đóng Cửa Sổ
               </button>

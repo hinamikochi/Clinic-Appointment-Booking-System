@@ -11,9 +11,11 @@ import {
   FileText,
   Pill,
   Calendar,
-  X
+  X,
+  Printer
 } from 'lucide-react';
 import ProfileView from './components/ProfileView';
+import { printPrescription } from './utils/printHelper';
 import './AdminDashboard.css';
 
 function PatientDashboard() {
@@ -524,7 +526,14 @@ function PatientDashboard() {
             </div>
 
             {/* Footer Modal */}
-            <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                onClick={() => printPrescription(selectedRecord.appointment, selectedRecord.medicalRecord)}
+                className="btn-primary-natural"
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={16} />  In Kết Quả Khám
+              </button>
               <button className="btn-secondary-natural" onClick={() => setShowRecordModal(false)}>
                 Đóng Cửa Sổ
               </button>
