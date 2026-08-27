@@ -15,6 +15,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Middleware: xác thực JWT Token và phân quyền
+const authMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Truy cập bị từ chối. Vui lòng đăng nhập!' });
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn!' });
+    }
+};
+
+const checkRole = (allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.user || !allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ message: 'Bạn không có quyền thực hiện thao tác này!' });
+        }
+        next();
+    };
+};
+
 // Thiết lập quan hệ các bảng trong MySQL
 User.hasOne(DoctorInfo, { foreignKey: 'userId' });
 DoctorInfo.belongsTo(User, { foreignKey: 'userId' });
@@ -210,7 +235,8 @@ app.get('/api/appointments', async (req, res) => {
 });
 
 // API: Admin Cập Nhật Trạng Thái Lịch Hẹn
-app.put('/api/appointments/:id/status', async (req, res) => {
+app.put('/api/appointments/:id/status', authMiddleware, 
+    checkRole(['admin', 'doctor']), async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -248,7 +274,8 @@ app.get('/api/specialties', async (req, res) => {
     }
 });
 
-app.post('/api/specialties', async (req, res) => {
+app.post('/api/specialties', authMiddleware, 
+    checkRole(['admin']), async (req, res) => {
     try {
         const { name, description } = req.body;
         const newSpec = await Specialty.create({ name, description });
@@ -258,7 +285,8 @@ app.post('/api/specialties', async (req, res) => {
     }
 });
 
-app.delete('/api/specialties/:id', async (req, res) => {
+app.delete('/api/specialties/:id', authMiddleware, 
+    checkRole(['admin']), async (req, res) => {
     try {
         const { id } = req.params;
         await Specialty.destroy({ where: { id } });
@@ -268,7 +296,8 @@ app.delete('/api/specialties/:id', async (req, res) => {
     }
 });
 
-app.post('/api/admin/doctors', async (req, res) => {
+app.post('/api/admin/doctors', authMiddleware, 
+    checkRole(['admin']), async (req, res) => {
     try {
         const { full_name, email, password, specialtyId, degree, image, description } = req.body;
         const userExists = await User.findOne({ where: { email } });
@@ -335,7 +364,8 @@ app.get('/api/doctor/appointments/:doctorId', async (req, res) => {
 });
 
 // API Lưu hồ sơ bệnh án
-app.post('/api/medical-records', async (req, res) => {
+app.post('/api/medical-records', authMiddleware, 
+    checkRole(['doctor', 'admin']), async (req, res) => {
     const t = await sequelize.transaction();
     try {
         const { appointmentId, patientId, doctorId, diagnosis, prescription, advice, re_visit_date } = req.body;
