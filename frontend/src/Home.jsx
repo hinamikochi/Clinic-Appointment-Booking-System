@@ -208,6 +208,180 @@ function Home() {
         </div>
       </section>
 
+        {/* 4 BƯỚC QUY TRÌNH KHÁM BỆNH */}
+        <div style={{
+          marginTop: '50px',
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+          backdropFilter: 'blur(16px)',
+          borderRadius: '28px',
+          padding: '36px 28px',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ffe082', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '6px' }}>
+              QUY TRÌNH TIỆN LỢI & NHANH CHÓNG
+            </div>
+            <h3 style={{ fontFamily: 'serif', fontSize: '26px', fontWeight: '700', color: '#ffffff', margin: 0 }}>
+              4 Bước Đặt Lịch Khám Bệnh Trực Tuyến
+            </h3>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '20px'
+          }}>
+            {/* BƯỚC 1 */}
+            <div 
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(12px)',
+                padding: '24px 18px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                textAlign: 'left',
+                transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 16px 35px rgba(0,0,0,0.25)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.22)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '14px', backgroundColor: '#5a5a40', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px',
+                fontSize: '16px', fontWeight: '800', boxShadow: '0 4px 14px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.3)'
+              }}>
+                01
+              </div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', margin: '0 0 6px 0' }}>
+                Chọn Chuyên Khoa
+              </h4>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
+                Lựa chọn khoa khám phù hợp hoặc tìm đích danh bác sĩ bạn tin tưởng.
+              </p>
+            </div>
+
+            {/* BƯỚC 2 */}
+            <div 
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(12px)',
+                padding: '24px 18px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                textAlign: 'left',
+                transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 16px 35px rgba(0,0,0,0.25)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.22)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '14px', backgroundColor: '#5a5a40', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px',
+                fontSize: '16px', fontWeight: '800', boxShadow: '0 4px 14px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.3)'
+              }}>
+                02
+              </div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', margin: '0 0 6px 0' }}>
+                Chọn Ngày & Giờ Khám
+              </h4>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
+                Chủ động chọn ngày khám và khung giờ linh hoạt theo lịch cá nhân.
+              </p>
+            </div>
+
+            {/* BƯỚC 3 */}
+            <div 
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(12px)',
+                padding: '24px 18px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                textAlign: 'left',
+                transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 16px 35px rgba(0,0,0,0.25)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.22)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '14px', backgroundColor: '#5a5a40', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px',
+                fontSize: '16px', fontWeight: '800', boxShadow: '0 4px 14px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.3)'
+              }}>
+                03
+              </div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', margin: '0 0 6px 0' }}>
+                Xác Nhận Phiếu Hẹn
+              </h4>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
+                Phòng khám lưu phiếu hẹn và thông báo nhắc lịch tự động.
+              </p>
+            </div>
+
+            {/* BƯỚC 4 */}
+            <div 
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(12px)',
+                padding: '24px 18px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                textAlign: 'left',
+                transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 16px 35px rgba(0,0,0,0.25)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.22)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '14px', backgroundColor: '#5a5a40', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px',
+                fontSize: '16px', fontWeight: '800', boxShadow: '0 4px 14px rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.3)'
+              }}>
+                04
+              </div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', margin: '0 0 6px 0' }}>
+                Khám & Nhận Đơn Thuốc
+              </h4>
+              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
+                Thăm khám không phải xếp hàng và xem đơn thuốc PDF trực tuyến.
+              </p>
+            </div>
+          </div>
+        </div>
+
       {/* 2. CHUYÊN KHOA NỔI BẬT SECTION */}
       <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px' }}>
         <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', borderRadius: '32px', padding: '40px', border: '1px solid #e6e6df', boxShadow: '0 15px 35px rgba(0,0,0,0.1)' }}>
@@ -267,12 +441,28 @@ function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
             {doctors.length > 0 ? (
               doctors.map((doc) => (
-                <div 
+                                <div 
                   key={doc.id}
                   style={{
-                    backgroundColor: '#ffffff', padding: '24px', borderRadius: '24px', border: '1px solid #e6e6df',
-                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
+                    backgroundColor: '#ffffff', 
+                    padding: '24px', 
+                    borderRadius: '24px', 
+                    border: '1px solid #e6e6df',
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    justify: 'space-between',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                    transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, border-color 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 16px 35px rgba(90, 90, 64, 0.15)';
+                    e.currentTarget.style.borderColor = '#c8c8b4';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
+                    e.currentTarget.style.borderColor = '#e6e6df';
                   }}
                 >
                   <div>
