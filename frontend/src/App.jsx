@@ -8,8 +8,15 @@ import AdminDashboard from './AdminDashboard';
 import DoctorDashboard from './DoctorDashboard';
 import PatientDashboard from './PatientDashboard';
 import './App.css';
+import axios from 'axios';
 
-// Bảo vệ Trang Admin
+// Tự động đính kèm JWT Token vào Header của mọi request
+const token = localStorage.getItem('token');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
+// Bảo vệ quyền Admin
 const ProtectedAdminRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/login" replace />;
@@ -22,7 +29,7 @@ const ProtectedAdminRoute = ({ children }) => {
   return <Navigate to="/login" replace />;
 };
 
-// Bảo vệ Trang Bác Sĩ
+// Bảo vệ quyền Bác Sĩ
 const ProtectedDoctorRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/login" replace />;
@@ -35,7 +42,7 @@ const ProtectedDoctorRoute = ({ children }) => {
   return children;
 };
 
-// Bảo vệ Trang Bệnh Nhân
+// Bảo vệ quyền Bệnh Nhân
 const ProtectedPatientRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return <Navigate to="/login" replace />;
