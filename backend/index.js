@@ -63,7 +63,7 @@ DoctorInfo.hasMany(MedicalRecord, { foreignKey: 'doctorId' });
 MedicalRecord.belongsTo(DoctorInfo, { foreignKey: 'doctorId' });
 
 // Tự động đồng bộ bảng MySQL
-sequelize.sync({ alter: true })
+sequelize.sync()
     .then(() => console.log('✅ Database & Tables synced!'))
     .catch(err => console.error('❌ Sync error:', err));
 
@@ -474,6 +474,56 @@ app.put('/api/users/change-password/:id', async (req, res) => {
     } catch (error) {
         console.error('Lỗi đổi mật khẩu:', error);
         res.status(500).json({ message: 'Lỗi server khi đổi mật khẩu' });
+    }
+});
+
+// API: Thống kê Dashboard cho Admin
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+    try {
+        // Đếm tổng số ca và đếm số ca theo từng trạng thái từ CSDL
+        const totalApts = await Appointment.count();
+        const completedCount = await Appointment.count({ where: { status: 'completed' } });
+        const confirmedCount = await Appointment.count({ where: { status: 'confirmed' } });
+        const pendingCount = await Appointment.count({ where: { status: 'pending' } });
+        const cancelledCount = await Appointment.count({ where: { status: 'cancelled' } });
+        // Tính Tỷ lệ khám thành công %
+        const successRate = totalApts > 0 ? Math.round((completedCount / totalApts) * 100) : 0;
+        // Đếm số ca khám phân bổ theo từng Chuyên khoa từ CSDL
+        const specialties = await Specialty.findAll();
+        const specialtyStats = await Promise.all(
+            specialties.map(async (spec) => {
+                const count = await Appointment.count({ where: { specialtyId: spec.id } });
+                const percentage = totalApts > 0 ? Math.round((count / totalApts) * 100) : 0;
+                return { id: spec.id, name: spec.name, count, percentage };
+            })
+        );
+        // Lấy 5 lịch hẹn mới nhất để hiển thị bảng
+        const recentAppointments = await Appointment.findAll({
+            limit: 5,
+            order: [['createdAt', 'DESC']],
+            include: [
+                { model: Specialty, attributes: ['id', 'name'] },
+                { 
+                    model: DoctorInfo, 
+                    attributes: ['id', 'degree'],
+                    include: [{ model: User, attributes: ['full_name'] }] 
+                }
+            ]
+        });
+        
+        res.json({
+            totalApts,
+            completedCount,
+            confirmedCount,
+            pendingCount,
+            cancelledCount,
+            successRate,
+            specialtyStats,
+            recentAppointments
+        });
+    } catch (error) {
+        console.error('Lỗi tính toán thống kê dashboard:', error);
+        res.status(500).json({ message: 'Lỗi server khi tính toán thống kê' });
     }
 });
 
