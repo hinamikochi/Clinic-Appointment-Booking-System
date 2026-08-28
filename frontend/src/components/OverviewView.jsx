@@ -16,46 +16,45 @@ import {
 } from 'lucide-react';
 
 export function OverviewView({ docCount, specCount, setActiveTab }) {
-  const [appointments, setAppointments] = useState([]);
-  const [specialties, setSpecialties] = useState([]);
+  // State nhận dữ liệu tính toán sẵn từ CSDL Backend
+  const [stats, setStats] = useState({
+    totalApts: 0,
+    completedCount: 0,
+    confirmedCount: 0,
+    pendingCount: 0,
+    cancelledCount: 0,
+    successRate: 0,
+    specialtyStats: [],
+    recentAppointments: []
+  });
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchDashboardStats = async () => {
       try {
-        const resApts = await axios.get('http://localhost:5001/api/appointments');
-        setAppointments(resApts.data);
-
-        const resSpecs = await axios.get('http://localhost:5001/api/specialties');
-        setSpecialties(resSpecs.data);
+        const res = await axios.get('http://localhost:5001/api/admin/dashboard-stats');
+        setStats(res.data);
       } catch (err) {
-        console.error("Lỗi nạp dữ liệu thống kê Dashboard:", err);
+        console.error("Lỗi nạp dữ liệu thống kê Dashboard từ CSDL:", err);
       }
     };
-    fetchDashboardData();
+    fetchDashboardStats();
   }, []);
 
-  // Đếm tổng số phiếu đặt khám và trạng thái
-  const totalApts = appointments.length;
-  
-  const completedCount = appointments.filter(a => a.status === 'completed').length;
-  const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
-  const pendingCount = appointments.filter(a => a.status === 'pending').length;
-  const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+  const { 
+    totalApts, 
+    completedCount, 
+    confirmedCount, 
+    pendingCount, 
+    cancelledCount, 
+    successRate, 
+    specialtyStats, 
+    recentAppointments 
+  } = stats;
 
-  // Tỷ lệ khám thành công %
-  const successRate = totalApts > 0 ? Math.round((completedCount / totalApts) * 100) : 0;
-
-  // Tính các thông số cho Biểu đồ hình tròn
+  // Tính góc độ cho Biểu đồ hình tròn
   const degCompleted = totalApts > 0 ? (completedCount / totalApts) * 360 : 0;
   const degConfirmed = totalApts > 0 ? degCompleted + (confirmedCount / totalApts) * 360 : degCompleted;
   const degPending = totalApts > 0 ? degConfirmed + (pendingCount / totalApts) * 360 : degConfirmed;
-
-  // Thống kê số ca khám rơi vào từng Chuyên Khoa
-  const specialtyStats = specialties.map(spec => {
-    const count = appointments.filter(a => String(a.specialtyId) === String(spec.id)).length;
-    const percentage = totalApts > 0 ? Math.round((count / totalApts) * 100) : 0;
-    return { id: spec.id, name: spec.name, count, percentage };
-  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
@@ -88,7 +87,7 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
         />
       </div>
 
-      {/*  BIỂU ĐỒ THỐNG KÊ */}
+      {/* BIỂU ĐỒ THỐNG KÊ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
         
         {/* BIỂU ĐỒ 1: CA KHÁM THEO TỪNG CHUYÊN KHOA */}
@@ -100,11 +99,11 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
                 Phân Bổ Ca Khám Theo Chuyên Khoa
               </h3>
             </div>
-            <span style={{ fontSize: '12px', color: '#8a8a70' }}>{specialties.length} Chuyên khoa</span>
+            <span style={{ fontSize: '12px', color: '#8a8a70' }}>{specCount} Chuyên khoa</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {specialtyStats.length > 0 ? (
+            {specialtyStats && specialtyStats.length > 0 ? (
               specialtyStats.map((item, idx) => {
                 const colors = ['#5a5a40', '#2e6f40', '#c4820e', '#3b82f6', '#8b5cf6'];
                 const barColor = colors[idx % colors.length];
@@ -154,7 +153,7 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
             justifyContent: 'center', 
             padding: '10px 0' 
           }}>
-            {/* VẼ BIỂU ĐỒ HÌNH TRÒN */}
+            {/* VẼ BIỂU ĐỒ HÌNH TRÒN CONIC-GRADIENT */}
             <div style={{
               width: '170px',
               height: '170px',
@@ -171,7 +170,6 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
               boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
               flexShrink: 0
             }}>
-              {/* Hiệu ứng tâm trắng */}
               <div style={{
                 width: '104px',
                 height: '104px',
@@ -261,8 +259,8 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
             </tr>
           </thead>
           <tbody>
-            {appointments.length > 0 ? (
-              appointments.slice(0, 5).map((apt) => (
+            {recentAppointments && recentAppointments.length > 0 ? (
+              recentAppointments.map((apt) => (
                 <tr key={apt.id}>
                   <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
                   <td style={{ fontWeight: '600' }}>{apt.patient_name}</td>
