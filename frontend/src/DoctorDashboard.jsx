@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { printPrescription } from './utils/printHelper';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -10,7 +11,8 @@ import {
   Home, 
   FileText, 
   Pill, 
-  Search
+  Search,
+  Printer
 } from 'lucide-react';
 import ProfileView from './components/ProfileView';
 import './AdminDashboard.css';
@@ -353,37 +355,47 @@ function DoctorDashboard() {
               <table className="natural-table">
                 <thead>
                   <tr>
-                    <th>Mã Lịch</th>
-                    <th>Bệnh Nhân</th>
-                    <th>Số Điện Thoại</th>
-                    <th>Ngày Khám</th>
-                    <th>Chẩn Đoán Bác Sĩ</th>
-                    <th>Đơn Thuốc</th>
-                    <th>Trạng Thái</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Mã Lịch</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Bệnh Nhân</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Số Điện Thoại</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Ngày Khám</th>
+                    <th style={{ minWidth: '200px' }}>Chẩn Đoán Bác Sĩ</th>
+                    <th style={{ minWidth: '220px' }}>Đơn Thuốc</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Trạng Thái</th>
+                    <th style={{ whiteSpace: 'nowrap' }}>Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody>
                   {completedList.length > 0 ? (
                     completedList.map((apt) => (
                       <tr key={apt.id}>
-                        <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
-                        <td style={{ fontWeight: '700' }}>{apt.patient_name}</td>
-                        <td>{apt.patient_phone}</td>
-                        <td>{apt.appointment_date}</td>
-                        <td style={{ fontWeight: '600', color: '#2e6f40' }}>
+                        <td style={{ fontWeight: '700', color: '#5a5a40', whiteSpace: 'nowrap' }}>LH-{apt.id}</td>
+                        <td style={{ fontWeight: '700', color: '#2d2d2a', whiteSpace: 'nowrap' }}>{apt.patient_name}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{apt.patient_phone}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{apt.appointment_date}</td>
+                        <td style={{ fontWeight: '600', color: '#2e6f40',  textAlign: 'justify' }}>
                           {apt.MedicalRecord?.diagnosis || 'Đã chẩn đoán'}
                         </td>
-                        <td style={{ fontSize: '12px', color: '#5a5a40', whiteSpace: 'pre-line' }}>
+                        <td style={{ fontSize: '12px', color: '#5a5a40', whiteSpace: 'pre-line', textAlign: 'justify' }}>
                           {apt.MedicalRecord?.prescription || 'Không có đơn thuốc'}
                         </td>
-                        <td>
-                          <span className="badge-status active">Khám xong</span>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span className="badge-status active" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>Khám xong</span>
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <button 
+                            onClick={() => printPrescription(apt, apt.MedicalRecord)}
+                            className="btn-primary-natural"
+                            style={{ padding: '6px 14px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                          >
+                            <Printer size={14} /> In Kết Quả Khám
+                          </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: '#8a8a70' }}>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#8a8a70' }}>
                         Chưa có lịch sử ca khám nào hoàn thành.
                       </td>
                     </tr>
