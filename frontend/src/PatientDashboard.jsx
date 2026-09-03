@@ -83,6 +83,30 @@ function PatientDashboard() {
     fetchData();
   }, []);
 
+    // Hàm tính thời gian đến ngày khám
+    const getCountdownBadge = (dateStr, status) => {
+    if (status === 'cancelled' || status === 'completed') return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const aptDate = new Date(dateStr);
+    aptDate.setHours(0, 0, 0, 0);
+
+    const diffTime = aptDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#e2f0d9', color: '#2e6f40', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>🟢 Hôm nay</span>;
+    } else if (diffDays === 1) {
+      return <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#e3f2fd', color: '#1565c0', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>🔵 Ngày mai</span>;
+    } else if (diffDays > 1) {
+      return <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#e3f2fd', color: '#1565c0', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>🔵 Còn {diffDays} ngày</span>;
+    } else {
+      return <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#f0f0ea', color: '#8a8a70', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>⚪ Đã qua</span>;
+    }
+  };
+
   const handleSpecialtyChange = (spId) => {
     setSpecialtyId(spId);
     const availableDocs = doctors.filter(d => String(d.specialtyId) === String(spId));
@@ -270,8 +294,11 @@ function PatientDashboard() {
                         <td>{apt.Specialty?.name || 'Chuyên Khoa'}</td>
                         <td style={{ fontWeight: '600' }}>{apt.DoctorInfo?.User?.full_name || 'Bác Sĩ'}</td>
                         <td>
-                          <div style={{ fontWeight: '600' }}>{apt.appointment_date}</div>
-                          <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div>
+                          <div style={{ fontWeight: '700', color: '#2d2d2a' }}>{apt.appointment_date}</div>
+                          <div style={{ fontSize: '12px', color: '#8a8a70', marginTop: '2px' }}>{apt.time_slot}</div>
+                          <div style={{ marginTop: '4px' }}>
+                            {getCountdownBadge(apt.appointment_date, apt.status)}
+                          </div>
                         </td>
                         <td>{apt.symptoms}</td>
                         <td>
