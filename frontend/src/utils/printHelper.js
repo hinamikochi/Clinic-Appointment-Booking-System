@@ -7,22 +7,138 @@ export const printPrescription = (apt, record) => {
     <head>
       <title>Phiếu Khám Bệnh & Đơn Thuốc - LH-${apt.id}</title>
       <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #2d2d2a; line-height: 1.6; }
-        .header { text-align: center; border-bottom: 2px solid #5a5a40; padding-bottom: 16px; margin-bottom: 24px; }
-        .clinic-name { font-size: 22px; font-weight: bold; color: #5a5a40; text-transform: uppercase; }
-        .clinic-sub { font-size: 13px; color: #666; margin-top: 4px; }
-        .title { font-size: 20px; font-weight: bold; color: #2d2d2a; margin-top: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #fdfbf7; padding: 16px; border-radius: 10px; border: 1px solid #e6e6df; margin-bottom: 20px; }
-        .info-item { font-size: 14px; }
-        .info-label { font-weight: bold; color: #5a5a40; }
-        .section-box { border: 1px solid #e6e6df; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
-        .section-title { font-size: 15px; font-weight: bold; color: #5a5a40; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase; }
-        .prescription-text { white-space: pre-line; font-size: 14px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #f0f0ea; }
-        .footer-sign { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
-        .sign-box { width: 220px; }
-        .sign-title { font-weight: bold; font-size: 14px; margin-bottom: 60px; }
-        @media print { body { padding: 20px; } .no-print { display: none; } }
-      </style>
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    color: #2d2d2a;
+    line-height: 1.5;
+  }
+
+  .header {
+    text-align: center;
+    border-bottom: 2px solid #5a5a40;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .clinic-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: #5a5a40;
+    text-transform: uppercase;
+  }
+
+  .clinic-sub {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2d2d2a;
+    margin-top: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: #fdfbf7;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e6e6df;
+    margin-bottom: 14px;
+  }
+
+  .info-item {
+    font-size: 14px;
+  }
+
+  .info-label {
+    font-weight: bold;
+    color: #5a5a40;
+  }
+
+  .section-box {
+    border: 1px solid #e6e6df;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 14px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #5a5a40;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .prescription-text {
+    white-space: pre-line;
+    font-size: 14px;
+    background: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #f0f0ea;
+  }
+
+  .footer-sign {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    text-align: center;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sign-box {
+    width: 220px;
+  }
+
+  .sign-title {
+    font-weight: bold;
+    font-size: 14px;
+
+    margin-bottom: 40px;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    .no-print {
+      display: none;
+    }
+
+    .footer-sign {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .section-box {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+</style>
     </head>
     <body>
       <div class="header">
