@@ -147,8 +147,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
         {filteredDoctors.length > 0 ? (
           filteredDoctors.map((doc) => (
-            <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
+           <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                   <img 
                     src={doc.image || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300'} 

@@ -217,6 +217,7 @@ function DoctorDashboard() {
               <div className="natural-section-card">
                 <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Ca Khám Chờ Tiếp Nhận</h3>
 
+              <div className="natural-table-container">
                 <table className="natural-table">
                   <thead>
                     <tr>
@@ -268,6 +269,7 @@ function DoctorDashboard() {
                     )}
                   </tbody>
                 </table>
+               </div>  
               </div>
             </div>
           )}
@@ -352,6 +354,7 @@ function DoctorDashboard() {
             <div className="natural-section-card">
               <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Ca Khám Đã Hoàn Thành</h3>
 
+            <div className="natural-table-container">
               <table className="natural-table">
                 <thead>
                   <tr>
@@ -402,6 +405,7 @@ function DoctorDashboard() {
                   )}
                 </tbody>
               </table>
+             </div>
             </div>
           )}
 

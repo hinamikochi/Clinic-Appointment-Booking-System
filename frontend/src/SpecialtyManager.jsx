@@ -97,8 +97,8 @@ function SpecialtyManager({ onUpdate }) {
       {/* Specialty Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
         {filteredSpecialties.map((sp) => (
-          <div key={sp.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
+          <div key={sp.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: '#f0f0ea', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e6e6df' }}>
                   <Building2 size={20} color="#5a5a40" />

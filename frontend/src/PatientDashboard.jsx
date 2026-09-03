@@ -274,6 +274,7 @@ function PatientDashboard() {
             <div className="natural-section-card">
               <h3 className="section-title-garamond" style={{ marginBottom: '16px' }}> Danh Sách Phiếu Đặt Lịch Của Tôi</h3>
 
+            <div className="natural-table-container">
               <table className="natural-table">
                 <thead>
                   <tr>
@@ -339,6 +340,7 @@ function PatientDashboard() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 

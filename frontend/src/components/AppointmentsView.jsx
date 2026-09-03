@@ -75,6 +75,7 @@ export function AppointmentsView() {
 
       {/* Bảng Danh Sách Lịch Hẹn Thực */}
       <div className="natural-section-card" style={{ width: '100%' }}>
+       <div className="natural-table-container">
         <table className="natural-table">
           <thead>
             <tr>
@@ -157,6 +158,7 @@ export function AppointmentsView() {
             )}
           </tbody>
         </table>
+       </div>
       </div>
 
       {/* MODAL XEM CHI TIẾT BỆNH ÁN DÀNH CHO ADMIN */}
@@ -257,7 +259,7 @@ export function AppointmentsView() {
                 className="btn-primary-natural"
                 style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                  <Printer size={16} />  In Đơn Thuốc PDF
+                  <Printer size={16} />  In Kết Quả Khám
               </button>
 
               <button className="btn-secondary-natural" onClick={() => setShowRecordModal(false)}>
