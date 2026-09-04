@@ -529,5 +529,9 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
 
 app.get('/', (req, res) => res.send('Server đang chạy...'));
 
-const PORT = 5001;
-app.listen(PORT, () => console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`));
+const PORT = process.env.PORT || 5001;
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`));
+}
+
+module.exports = app;
