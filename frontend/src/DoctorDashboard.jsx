@@ -111,7 +111,7 @@ function DoctorDashboard() {
     return a.patient_name.toLowerCase().includes(q) || a.patient_phone.includes(q);
   });
 
-  const pendingList = filteredAppointments.filter(a => a.status !== 'completed');
+  const pendingList = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
   const completedList = filteredAppointments.filter(a => a.status === 'completed');
 
   return (
