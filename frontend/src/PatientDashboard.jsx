@@ -435,6 +435,19 @@ function PatientDashboard() {
                       </select>
                     </div>
                   </div>
+                  {doctorId && (
+                    <div style={{ backgroundColor: '#ffffff', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e6e6df', fontSize: '13px', display: 'flex', justifyContent: 'space-between', color: '#5a5a40', marginTop: '8px' }}>
+                      {(() => {
+                        const selDoc = doctors.find(d => String(d.id) === String(doctorId));
+                        return (
+                          <>
+                            <span> Vị trí: <strong>{selDoc?.roomNumber || 'Phòng 101 - Tầng 1'}</strong></span>
+                            <span> Giá khám dự kiến: <strong style={{ color: '#2e6f40' }}>{selDoc?.consultationFee ? `${Number(selDoc.consultationFee).toLocaleString('vi-VN')} VNĐ` : '200.000 VNĐ'}</strong></span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 <div>
