@@ -167,8 +167,16 @@ function DoctorDashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-avatar">
-            {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'B'}
+          <div className="user-avatar" style={{ overflow: 'hidden', padding: 0 }}>
+            {doctorInfo?.image ? (
+              <img 
+                src={doctorInfo.image} 
+                alt={user.full_name} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            ) : (
+              user.full_name ? user.full_name.charAt(0).toUpperCase() : 'B'
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d2d2a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -410,7 +418,7 @@ function DoctorDashboard() {
           )}
 
           {activeTab === 'profile' && (
-            <ProfileView />
+            <ProfileView onUpdate={fetchData} />
           )}
         </div>
       </div>

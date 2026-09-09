@@ -70,7 +70,10 @@ sequelize.sync()
 // API: Lấy thông tin tài khoản người dùng theo ID      
 app.get('/api/users/:id', async (req, res) => {
     try {
-        const user = await User.findByPk(req.params.id, { attributes: ['id', 'full_name', 'email', 'role'] });
+        const user = await User.findByPk(req.params.id, { 
+            attributes: ['id', 'full_name', 'email', 'phone', 'gender', 'address', 'role'],
+            include: [{ model: DoctorInfo }]
+        });
         if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
         res.json(user);
     } catch (err) {
@@ -426,26 +429,35 @@ app.post('/api/medical-records', authMiddleware,
 app.put('/api/users/profile/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { full_name, phone, gender, address } = req.body;
+        const { full_name, phone, gender, address, degree, image } = req.body;
         const user = await User.findByPk(id);
         if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+
         await user.update({
             full_name: full_name || user.full_name,
-            phone: phone || user.phone,
+            phone: phone !== undefined ? phone : user.phone,
             gender: gender || user.gender,
-            address: address || user.address
+            address: address !== undefined ? address : user.address
         });
+
+        if (user.role === 'doctor') {
+            const docInfo = await DoctorInfo.findOne({ where: { userId: user.id } });
+            if (docInfo) {
+                await docInfo.update({
+                    degree: degree !== undefined ? degree : docInfo.degree,
+                    image: image !== undefined ? image : docInfo.image
+                });
+            }
+        }
+
+        const updatedUser = await User.findByPk(id, {
+            attributes: ['id', 'full_name', 'email', 'phone', 'gender', 'address', 'role'],
+            include: [{ model: DoctorInfo }]
+        });
+
         res.json({ 
             message: 'Cập nhật thông tin cá nhân thành công!',
-            user: {
-                id: user.id,
-                full_name: user.full_name,
-                email: user.email,
-                phone: user.phone,
-                gender: user.gender,
-                address: user.address,
-                role: user.role
-            }
+            user: updatedUser
         });
     } catch (error) {
         console.error('Lỗi cập nhật hồ sơ:', error);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, KeyRound, Save } from 'lucide-react';
+import { User, KeyRound, Save, Award, Image } from 'lucide-react';
 
-export function ProfileView() {
+export function ProfileView({ onUpdate }) {
   const userStr = localStorage.getItem('user');
   const initialUser = userStr ? JSON.parse(userStr) : { id: 0, full_name: '', email: '' };
 
@@ -12,6 +12,10 @@ export function ProfileView() {
   const [phone, setPhone] = useState(initialUser.phone || '');
   const [gender, setGender] = useState(initialUser.gender || 'Nam');
   const [address, setAddress] = useState(initialUser.address || '');
+
+  const [degree, setDegree] = useState('');
+  const [image, setImage] = useState('');
+
   const [updatingProfile, setUpdatingProfile] = useState(false);
 
   const [oldPassword, setOldPassword] = useState('');
@@ -30,6 +34,11 @@ export function ProfileView() {
           setPhone(res.data.phone || '');
           setGender(res.data.gender || 'Nam');
           setAddress(res.data.address || '');
+
+          if (res.data.DoctorInfo) {
+            setDegree(res.data.DoctorInfo.degree || '');
+            setImage(res.data.DoctorInfo.image || '');
+          }
           localStorage.setItem('user', JSON.stringify(res.data));
         }
       } catch (err) {
@@ -47,11 +56,14 @@ export function ProfileView() {
         full_name: fullName,
         phone,
         gender,
-        address
+        address,
+        degree,
+        image
       });
       alert("🎉 " + res.data.message);
       setUserInfo(res.data.user);
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      if (onUpdate) onUpdate();
     } catch (err) {
       alert(err.response?.data?.message || "Lỗi cập nhật hồ sơ");
     } finally {
@@ -87,6 +99,8 @@ export function ProfileView() {
     }
   };
 
+  const isDoctor = userInfo.role === 'doctor';
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
       
@@ -96,7 +110,7 @@ export function ProfileView() {
           <User size={20} color="#5a5a40" /> Thông Tin Cá Nhân
         </h3>
         <p style={{ fontSize: '12px', color: '#8a8a70', marginBottom: '20px' }}>
-          Cập nhật họ tên, số điện thoại liên hệ và địa chỉ của bạn.
+          Cập nhật họ tên, số điện thoại, địa chỉ {isDoctor && '& học vị chuyên môn bác sĩ'}.
         </p>
 
         <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -115,6 +129,43 @@ export function ProfileView() {
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', backgroundColor: '#f5f5f0', cursor: 'not-allowed', fontSize: '13px' }}
             />
           </div>
+
+          {/* CÁC TRƯỜNG DÀNH RIÊNG CHO BÁC SĨ */}
+          {isDoctor && (
+            <>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                   Học vị chuyên môn 
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ví dụ: GS-TS, BSCKII, Master..." 
+                  value={degree} 
+                  onChange={(e) => setDegree(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', fontSize: '13px', backgroundColor: '#fdfbf7', fontWeight: '600' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                   Link Hình Ảnh Đại Diện (Avatar URL)
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="https://..." 
+                  value={image} 
+                  onChange={(e) => setImage(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', fontSize: '13px', backgroundColor: '#fdfbf7' }}
+                />
+                {image && (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img src={image} alt="Preview" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e6e6df' }} />
+                    <span style={{ fontSize: '11px', color: '#8a8a70' }}>Xem trước ảnh đại diện</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
