@@ -293,7 +293,14 @@ function PatientDashboard() {
                       <tr key={apt.id}>
                         <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
                         <td>{apt.Specialty?.name || 'Chuyên Khoa'}</td>
-                        <td style={{ fontWeight: '600' }}>{apt.DoctorInfo?.User?.full_name || 'Bác Sĩ'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: '600', color: '#2d2d2a' }}>
+                            {apt.DoctorInfo?.degree ? `${apt.DoctorInfo.degree} ` : ''}{apt.DoctorInfo?.User?.full_name || 'Bác Sĩ'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#5a5a40', marginTop: '2px', fontWeight: '500' }}>
+                             {apt.DoctorInfo?.roomNumber || 'Phòng 101 - Tầng 1'}
+                          </div>
+                        </td>
                         <td>
                           <div style={{ fontWeight: '700', color: '#2d2d2a' }}>{apt.appointment_date}</div>
                           <div style={{ fontSize: '12px', color: '#8a8a70', marginTop: '2px' }}>{apt.time_slot}</div>

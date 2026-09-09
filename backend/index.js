@@ -62,9 +62,55 @@ MedicalRecord.belongsTo(Appointment, { foreignKey: 'appointmentId' });
 DoctorInfo.hasMany(MedicalRecord, { foreignKey: 'doctorId' });
 MedicalRecord.belongsTo(DoctorInfo, { foreignKey: 'doctorId' });
 
-// Tự động đồng bộ bảng MySQL
+// Phân tầng và tìm phòng khám trống
+async function findFirstAvailableRoom(specialtyId) {
+    const specId = parseInt(specialtyId, 10) || 1;
+    
+    const floor = specId;
+    const baseRoomNumber = floor * 100;
+
+    const doctors = await DoctorInfo.findAll({ where: { specialtyId: specId } });
+    
+    const usedRoomNumbers = doctors.map(d => {
+        if (!d.roomNumber) return 0;
+        const match = d.roomNumber.match(/\d+/);
+        return match ? parseInt(match[0], 10) : 0;
+    }).filter(n => n > 0);
+
+    // Tìm số phòng nhỏ nhất còn trống
+    let candidateNumber = baseRoomNumber + 1;
+    while (usedRoomNumbers.includes(candidateNumber)) {
+        candidateNumber++;
+    }
+
+    
+    const defaultFee = floor === 1 ? 200000 : (floor === 2 ? 250000 : 300000);
+
+    return {
+        roomNumber: `Phòng ${candidateNumber} - Tầng ${floor}`,
+        defaultFee: defaultFee
+    };
+}
+
+// Tự động đồng bộ bảng MySQL & Cập nhật phòng/giá cho Bác sĩ
 sequelize.sync()
-    .then(() => console.log('✅ Database & Tables synced!'))
+    .then(async () => {
+        console.log('✅ Database & Tables synced!');
+        try {
+            const doctorsWithoutRoom = await DoctorInfo.findAll({
+                where: {
+                    [Op.or]: [{ roomNumber: null }, { roomNumber: '' }]
+                }
+            });
+            for (let doc of doctorsWithoutRoom) {
+                const auto = await findFirstAvailableRoom(doc.specialtyId);
+                await doc.update({
+                    roomNumber: auto.roomNumber,
+                    consultationFee: auto.defaultFee
+                });
+            }
+        } catch (e) { console.error('Lỗi sync bác sĩ cũ:', e); }
+    })
     .catch(err => console.error('❌ Sync error:', err));
 
 // API: Lấy thông tin tài khoản người dùng theo ID      
@@ -317,34 +363,29 @@ app.delete('/api/specialties/:id', authMiddleware,
     }
 });
 
-app.post('/api/admin/doctors', authMiddleware, 
-    checkRole(['admin']), async (req, res) => {
+app.put('/api/admin/doctors/:id', authMiddleware, checkRole(['admin']), async (req, res) => {
     try {
-        const { full_name, email, password, specialtyId, degree, image, description } = req.body;
-        const userExists = await User.findOne({ where: { email } });
-        if (userExists) return res.status(400).json({ message: 'Email đã tồn tại!' });
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = await User.create({
-            full_name, email, password: hashedPassword, role: 'doctor'
+        const { id } = req.params; // doctorInfo id
+        const { full_name, specialtyId, degree, image, roomNumber, consultationFee, description } = req.body;
+        const docInfo = await DoctorInfo.findByPk(id, { include: [{ model: User }] });
+        if (!docInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+        if (full_name && docInfo.User) {
+            await docInfo.User.update({ full_name });
+        }
+        await docInfo.update({
+            specialtyId: specialtyId || docInfo.specialtyId,
+            degree: degree !== undefined ? degree : docInfo.degree,
+            image: image !== undefined ? image : docInfo.image,
+            roomNumber: roomNumber !== undefined ? roomNumber : docInfo.roomNumber,
+            consultationFee: consultationFee !== undefined ? Number(consultationFee) : docInfo.consultationFee,
+            description: description !== undefined ? description : docInfo.description
         });
-
-        const newDoctorInfo = await DoctorInfo.create({
-            userId: newUser.id,
-            specialtyId,
-            degree: degree || 'Bác sĩ',
-            image: image || '',
-            description: description || ''
-        });
-
-        res.status(201).json({ message: 'Tạo bác sĩ thành công!', data: newDoctorInfo });
+        res.json({ message: 'Cập nhật thông tin Bác sĩ thành công!', data: docInfo });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi tạo bác sĩ.' });
+        console.error('Lỗi cập nhật bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật bác sĩ' });
     }
 });
-
 
 // API: Lấy thông tin chi tiết Bác sĩ theo userId tài khoản
 app.get('/api/doctor/info/:userId', async (req, res) => {

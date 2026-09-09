@@ -6,7 +6,8 @@ import {
   Plus, 
   Trash2, 
   XCircle,
-  UserCheck
+  Edit,
+  Save
 } from 'lucide-react';
 
 function DoctorManager({ onUpdate, initialSearchQuery }) {
@@ -14,7 +15,9 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   const [specialties, setSpecialties] = useState([]);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
+  
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState(null);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -22,13 +25,23 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     password: '',
     specialtyId: '',
     degree: 'Bác sĩ chuyên khoa',
-    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300',
+    image: '',
     roomNumber: '',
     consultationFee: '',
     description: ''
   });
 
-  // Tự động nạp từ khóa lọc khi chọn từ Header
+  const [editFormData, setEditFormData] = useState({
+    id: null,
+    full_name: '',
+    specialtyId: '',
+    degree: '',
+    image: '',
+    roomNumber: '',
+    consultationFee: '',
+    description: ''
+  });
+
   useEffect(() => {
     if (initialSearchQuery !== undefined) {
       setSearchQuery(initialSearchQuery);
@@ -42,7 +55,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
       const resSpecs = await axios.get('http://localhost:5001/api/specialties');
       setSpecialties(resSpecs.data);
-      if (resSpecs.data.length > 0) {
+      if (resSpecs.data.length > 0 && !formData.specialtyId) {
         setFormData(prev => ({ ...prev, specialtyId: resSpecs.data[0].id }));
       }
     } catch (err) {
@@ -54,6 +67,38 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     fetchData();
   }, []);
 
+  // Modal Chỉnh Sửa Bác Sĩ
+  const handleOpenEditModal = (doc) => {
+    setEditingDoctor(doc);
+    setEditFormData({
+      id: doc.id,
+      full_name: doc.User?.full_name || '',
+      specialtyId: doc.specialtyId || specialties[0]?.id || '',
+      degree: doc.degree || '',
+      image: doc.image || '',
+      roomNumber: doc.roomNumber || '',
+      consultationFee: doc.consultationFee || 200000,
+      description: doc.description || ''
+    });
+  };
+
+  // Lưu Thay Đổi Cập Nhật Bác Sĩ
+  const handleUpdateDoctorSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:5001/api/admin/doctors/${editFormData.id}`, editFormData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("🎉 " + res.data.message);
+      setEditingDoctor(null);
+      fetchData();
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      alert(err.response?.data?.message || "Lỗi khi cập nhật bác sĩ");
+    }
+  };
+
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     if (!formData.full_name || !formData.email || !formData.password || !formData.specialtyId) {
@@ -63,7 +108,9 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/admin/doctors', formData);
+      await axios.post('http://localhost:5001/api/admin/doctors', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       alert("🎉 Tạo tài khoản Bác sĩ thành công!");
       setShowAddModal(false);
       setFormData({
@@ -72,7 +119,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
         password: '',
         specialtyId: specialties[0]?.id || '',
         degree: 'Bác sĩ chuyên khoa',
-        image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300',
+        image: '',
         roomNumber: '',
         consultationFee: '',
         description: ''
@@ -88,7 +135,9 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bác sĩ này khỏi hệ thống?")) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/admin/doctors/${id}`);
+      await axios.delete(`http://localhost:5001/api/admin/doctors/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       alert("Đã xóa bác sĩ thành công!");
       fetchData();
       if (onUpdate) onUpdate();
@@ -112,12 +161,12 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
             <Stethoscope size={24} color="#5a5a40" /> Quản Lý Danh Sách Bác Sĩ
           </h2>
           <p style={{ fontSize: '13px', color: '#8a8a70', margin: '4px 0 0 0' }}>
-            Tổng số: <b>{doctors.length}</b> bác sĩ trong cơ sở dữ liệu
+            Tổng số: {doctors.length} bác sĩ trong cơ sở dữ liệu hệ thống
           </p>
         </div>
 
         <button className="btn-primary-natural" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> + Thêm Bác Sĩ Mới
+          <Plus size={16} /> Thêm Bác Sĩ Mới
         </button>
       </div>
 
@@ -149,14 +198,17 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
         {filteredDoctors.length > 0 ? (
           filteredDoctors.map((doc) => (
-           <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ width: '100%' }}>
+            <div key={doc.id} className="stat-card-natural" style={{ flexDirection: 'column', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                  <img 
-                    src={doc.image || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300'} 
-                    alt={doc.User?.full_name}
-                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e6e6df' }}
-                  />
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #e6e6df', backgroundColor: '#e2f0d9', color: '#2e6f40', fontWeight: '700', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {doc.image ? (
+                      <img src={doc.image} alt={doc.User?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      doc.User?.full_name ? doc.User.full_name.charAt(0).toUpperCase() : 'B'
+                    )}
+                  </div>
+
                   <div style={{ flex: 1 }}>
                     <span className="brand-tag">{doc.Specialty?.name || 'Chuyên Khoa'}</span>
                     <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#2d2d2a', margin: '4px 0 2px 0' }}>
@@ -173,21 +225,25 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#8a8a70' }}>Số phòng khám:</span>
-                    <span style={{ fontWeight: '600', color: '#5a5a40' }}>{doc.roomNumber || 'Chưa cập nhật'}</span>
+                    <span style={{ fontWeight: '700', color: '#5a5a40' }}>{doc.roomNumber || 'Phòng 101 - Tầng 1'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#8a8a70' }}>Giá khám niêm yết:</span>
-                    <span style={{ fontWeight: '600', color: '#5a5a40' }}>
-                      {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật'}
+                    <span style={{ fontWeight: '700', color: '#2e6f40' }}>
+                      {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : '200.000 VNĐ'}
                     </span>
                   </div>
                 </div>
               </div>
 
+              {/* Nút sửa và xoá */}
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="badge-status active" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <UserCheck size={12} /> Đang hoạt động
-                </span>
+                <button 
+                  onClick={() => handleOpenEditModal(doc)}
+                  style={{ background: 'none', border: 'none', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  <Edit size={14} /> Chỉnh Sửa
+                </button>
                 <button 
                   onClick={() => handleDeleteDoctor(doc.id)}
                   style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer' }}
@@ -268,6 +324,27 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                 </div>
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Số phòng (Tự động/Tùy chỉnh)</label>
+                  <input 
+                    type="text" placeholder="Tự động cấp phòng trống"
+                    value={formData.roomNumber}
+                    onChange={(e) => setFormData({...formData, roomNumber: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', backgroundColor: '#fdfbf7' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Giá khám (Tự động/Tùy chỉnh)</label>
+                  <input 
+                    type="number" placeholder="Mặc định theo khoa"
+                    value={formData.consultationFee}
+                    onChange={(e) => setFormData({...formData, consultationFee: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', backgroundColor: '#fdfbf7' }}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
                 <input 
@@ -279,19 +356,95 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                 />
               </div>
 
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                <button type="button" className="btn-secondary-natural" onClick={() => setShowAddModal(false)}>Hủy Bỏ</button>
+                <button type="submit" className="btn-primary-natural">Lưu Bác Sĩ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chỉnh Sửa Bác Sĩ */}
+      {editingDoctor && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ backgroundColor: '#ffffff', width: '100%', maxWidth: '460px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #e6e6df' }}>
+            <div style={{ backgroundColor: '#5a5a40', color: '#ffffff', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Sửa Thông Tin Bác Sĩ</h3>
+              <XCircle size={20} style={{ cursor: 'pointer' }} onClick={() => setEditingDoctor(null)} />
+            </div>
+
+            <form onSubmit={handleUpdateDoctorSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn</label>
-                <textarea 
-                  rows={2} placeholder="Mô tả về bác sĩ..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontFamily: 'inherit' }}
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Họ và tên bác sĩ *</label>
+                <input 
+                  type="text" required
+                  value={editFormData.full_name}
+                  onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Chuyên khoa</label>
+                  <select 
+                    value={editFormData.specialtyId}
+                    onChange={(e) => setEditFormData({...editFormData, specialtyId: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
+                  >
+                    {specialties.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Học vị</label>
+                  <input 
+                    type="text" value={editFormData.degree}
+                    onChange={(e) => setEditFormData({...editFormData, degree: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* Điều chỉnh số phòng và giá khám */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Số phòng khám *</label>
+                  <input 
+                    type="text" required placeholder="Phòng 101 - Tầng 1"
+                    value={editFormData.roomNumber}
+                    onChange={(e) => setEditFormData({...editFormData, roomNumber: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', backgroundColor: '#fdfbf7', fontWeight: '600' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2e6f40' }}>Giá khám niêm yết (VNĐ) *</label>
+                  <input 
+                    type="number" required step="10000" placeholder="200000"
+                    value={editFormData.consultationFee}
+                    onChange={(e) => setEditFormData({...editFormData, consultationFee: e.target.value})}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cce8cc', marginTop: '4px', outline: 'none', backgroundColor: '#f4fbf4', fontWeight: '700', color: '#2e6f40' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
+                <input 
+                  type="text" placeholder="https://..."
+                  value={editFormData.image}
+                  onChange={(e) => setEditFormData({...editFormData, image: e.target.value})}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-                <button type="button" className="btn-secondary-natural" onClick={() => setShowAddModal(false)}>Hủy Bỏ</button>
-                <button type="submit" className="btn-primary-natural">Lưu Bác Sĩ</button>
+                <button type="button" className="btn-secondary-natural" onClick={() => setEditingDoctor(null)}>Hủy Bỏ</button>
+                <button type="submit" className="btn-primary-natural" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Save size={16} /> Lưu Thay Đổi
+                </button>
               </div>
             </form>
           </div>

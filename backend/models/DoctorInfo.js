@@ -14,7 +14,9 @@ const DoctorInfo = sequelize.define('DoctorInfo', {
         references: { model: Specialty, key: 'id' }
     },
     degree: { type: DataTypes.STRING },
-    image: { type:  DataTypes.STRING },
+    image: { type: DataTypes.STRING },
+    roomNumber: { type: DataTypes.STRING },
+    consultationFee: { type: DataTypes.INTEGER },
     description: { type: DataTypes.TEXT }
 });
 

@@ -512,6 +512,14 @@ function Home() {
                     </p>
                   </div>
 
+                  {/* Hiển thị thông tin phòng khám và phí khám */}
+                  <div style={{ marginTop: 'auto', paddingTop: '12px', marginBottom: '16px', borderTop: '1px solid #f5f5f0', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#5a5a40', fontWeight: '600' }}>📍 {doc.roomNumber || 'Phòng 101 - Tầng 1'}</span>
+                      <span style={{ color: '#2e6f40', fontWeight: '700' }}>
+                        {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : '200.000 VNĐ'}
+                      </span>
+                    </div>
+
                   <button 
                     onClick={() => handleBookSpecificDoctor(doc)}
                     className="btn-primary-natural"
