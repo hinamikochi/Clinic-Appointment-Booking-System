@@ -62,6 +62,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     }
 
     try {
+      const token = localStorage.getItem('token');
       await axios.post('http://localhost:5001/api/admin/doctors', formData);
       alert("🎉 Tạo tài khoản Bác sĩ thành công!");
       setShowAddModal(false);
@@ -86,6 +87,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   const handleDeleteDoctor = async (id) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bác sĩ này khỏi hệ thống?")) return;
     try {
+      const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:5001/api/admin/doctors/${id}`);
       alert("Đã xóa bác sĩ thành công!");
       fetchData();

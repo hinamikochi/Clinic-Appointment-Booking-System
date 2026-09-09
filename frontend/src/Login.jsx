@@ -19,14 +19,16 @@ function Login() {
 
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(user));
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
 
-      // Phân hướng thông minh theo Vai Trò (Role)
+      // Phân hướng theo vai trò (Role-based Routing)
       if (user.role === 'admin') {
         navigate('/admin');
       } else if (user.role === 'doctor') {
         navigate('/doctor');
       } else {
-        navigate('/');
+        // Tài khoản bệnh nhân -> Sang màn hình Bệnh nhân riêng
+        navigate('/patient');
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Email hoặc mật khẩu không chính xác');
