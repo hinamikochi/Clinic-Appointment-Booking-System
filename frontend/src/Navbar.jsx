@@ -50,7 +50,7 @@ function Navbar() {
             {/* Nút Bác sĩ */}
             {user.role === 'doctor' && (
               <Link to="/doctor" className="nav-btn-doctor">
-                🩺 Lịch Khám
+                 Lịch Khám
               </Link>
             )}
 
