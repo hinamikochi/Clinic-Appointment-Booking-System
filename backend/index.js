@@ -318,7 +318,7 @@ app.put('/api/appointments/:id/status', authMiddleware,
 });
 
 // API Bác Sĩ & Chuyên Khoa
-app.get('/api/doctors', async (req, res) => {
+app.get(['/api/doctors', '/api/admin/doctors'], async (req, res) => {
     try {
         const doctors = await DoctorInfo.findAll({
             include: [
@@ -388,27 +388,103 @@ app.put('/api/specialties/:id', authMiddleware, checkRole(['admin']), async (req
     }
 });
 
+// API: admin Tạo Tài Khoản Bác Sĩ
+app.post('/api/admin/doctors', authMiddleware, checkRole(['admin']), async (req, res) => {
+    try {
+        const { full_name, email, password, specialtyId, degree, image, roomNumber, consultationFee, description } = req.body;
+
+        if (!full_name || !email || !password || !specialtyId) {
+            return res.status(400).json({ message: 'Vui lòng điền đầy đủ các thông tin bắt buộc!' });
+        }
+
+        const userExists = await User.findOne({ where: { email } });
+        if (userExists) {
+            return res.status(400).json({ message: 'Email này đã tồn tại trên hệ thống!' });
+        }
+
+        const autoRoom = await findFirstAvailableRoom(specialtyId);
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const t = await sequelize.transaction();
+        try {
+            const newUser = await User.create({
+                full_name,
+                email,
+                password: hashedPassword,
+                role: 'doctor'
+            }, { transaction: t });
+
+            const newDocInfo = await DoctorInfo.create({
+                userId: newUser.id,
+                specialtyId: Number(specialtyId),
+                degree: degree || 'Bác sĩ chuyên khoa',
+                image: image || '',
+                roomNumber: roomNumber || autoRoom.roomNumber,
+                consultationFee: consultationFee ? Number(consultationFee) : autoRoom.defaultFee,
+                description: description || ''
+            }, { transaction: t });
+
+            await t.commit();
+            res.status(201).json({ message: 'Tạo tài khoản Bác sĩ thành công!', data: newDocInfo });
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
+    } catch (error) {
+        console.error('Lỗi tạo bác sĩ:', error);
+        res.status(500).json({ message: error.message || 'Lỗi server khi tạo bác sĩ.' });
+    }
+});
+
 app.put('/api/admin/doctors/:id', authMiddleware, checkRole(['admin']), async (req, res) => {
     try {
-        const { id } = req.params; // doctorInfo id
+        const { id } = req.params; 
         const { full_name, specialtyId, degree, image, roomNumber, consultationFee, description } = req.body;
         const docInfo = await DoctorInfo.findByPk(id, { include: [{ model: User }] });
         if (!docInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+
         if (full_name && docInfo.User) {
             await docInfo.User.update({ full_name });
         }
+
         await docInfo.update({
-            specialtyId: specialtyId || docInfo.specialtyId,
+            specialtyId: specialtyId ? Number(specialtyId) : docInfo.specialtyId,
             degree: degree !== undefined ? degree : docInfo.degree,
             image: image !== undefined ? image : docInfo.image,
             roomNumber: roomNumber !== undefined ? roomNumber : docInfo.roomNumber,
-            consultationFee: consultationFee !== undefined ? Number(consultationFee) : docInfo.consultationFee,
+            consultationFee: (consultationFee !== undefined && consultationFee !== '' && !isNaN(consultationFee)) ? Number(consultationFee) : docInfo.consultationFee,
             description: description !== undefined ? description : docInfo.description
         });
+
         res.json({ message: 'Cập nhật thông tin Bác sĩ thành công!', data: docInfo });
     } catch (error) {
         console.error('Lỗi cập nhật bác sĩ:', error);
-        res.status(500).json({ message: 'Lỗi server khi cập nhật bác sĩ' });
+        res.status(500).json({ message: error.message || 'Lỗi server khi cập nhật bác sĩ' });
+    }
+});
+
+app.delete('/api/admin/doctors/:id', authMiddleware, checkRole(['admin']), async (req, res) => {
+    const t = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const docInfo = await DoctorInfo.findByPk(id, { transaction: t });
+        if (!docInfo) {
+            await t.rollback();
+            return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+        }
+        const userId = docInfo.userId;
+        await docInfo.destroy({ transaction: t });
+        if (userId) {
+            await User.destroy({ where: { id: userId }, transaction: t });
+        }
+        await t.commit();
+        res.json({ message: 'Đã xóa Bác sĩ khỏi hệ thống thành công!' });
+    } catch (error) {
+        await t.rollback();
+        console.error('Lỗi xóa bác sĩ:', error);
+        res.status(500).json({ message: 'Lỗi server khi xóa bác sĩ.' });
     }
 });
 
