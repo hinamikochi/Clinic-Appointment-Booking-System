@@ -334,9 +334,17 @@ app.get('/api/doctors', async (req, res) => {
 
 app.get('/api/specialties', async (req, res) => {
     try {
-        const specialties = await Specialty.findAll();
+        const specialties = await Specialty.findAll({
+            include: [
+                {
+                    model: DoctorInfo,
+                    attributes: ['id', 'consultationFee', 'roomNumber']
+                }
+            ]
+        });
         res.json(specialties);
     } catch (error) {
+        console.error('Lỗi lấy danh sách chuyên khoa:', error);
         res.status(500).json({ message: 'Lỗi server.' });
     }
 });
@@ -360,6 +368,23 @@ app.delete('/api/specialties/:id', authMiddleware,
         res.json({ message: 'Đã xóa chuyên khoa!' });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi xóa chuyên khoa.' });
+    }
+});
+
+app.put('/api/specialties/:id', authMiddleware, checkRole(['admin']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const spec = await Specialty.findByPk(id);
+        if (!spec) return res.status(404).json({ message: 'Không tìm thấy chuyên khoa!' });
+        await spec.update({
+            name: name || spec.name,
+            description: description !== undefined ? description : spec.description
+        });
+        res.json({ message: 'Cập nhật chuyên khoa thành công!', data: spec });
+    } catch (error) {
+        console.error('Lỗi cập nhật chuyên khoa:', error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật chuyên khoa.' });
     }
 });
 
