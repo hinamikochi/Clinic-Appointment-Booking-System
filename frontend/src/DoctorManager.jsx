@@ -346,14 +346,35 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
-                <input 
-                  type="text" 
-                  placeholder="https://..."
-                  value={formData.image}
-                  onChange={(e) => setFormData({...formData, image: e.target.value})}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn / Giới thiệu bác sĩ</label>
+                <textarea 
+                  rows={3}
+                  placeholder="Giới thiệu kinh nghiệm, quá trình công tác của bác sĩ..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontFamily: 'inherit' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="https://..."
+                    value={formData.image}
+                    onChange={(e) => setFormData({...formData, image: e.target.value})}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none' }}
+                  />
+                  {formData.image && (
+                    <img 
+                      src={formData.image} 
+                      alt="Xem trước ảnh" 
+                      style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e6e6df' }}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
@@ -431,13 +452,35 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
-                <input 
-                  type="text" placeholder="https://..."
-                  value={editFormData.image}
-                  onChange={(e) => setEditFormData({...editFormData, image: e.target.value})}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn / Giới thiệu bác sĩ</label>
+                <textarea 
+                  rows={3}
+                  placeholder="Giới thiệu kinh nghiệm, quá trình công tác của bác sĩ..."
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontFamily: 'inherit' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="https://..."
+                    value={editFormData.image}
+                    onChange={(e) => setEditFormData({...editFormData, image: e.target.value})}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none' }}
+                  />
+                  {editFormData.image && (
+                    <img 
+                      src={editFormData.image} 
+                      alt="Xem trước ảnh" 
+                      style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e6e6df' }}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
