@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: clinic_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: clinic_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 2. Container Backend Node.js
+  backend:
+    build: ./backend
+    container_name: clinic_backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_NAME=clinic_db
+      - JWT_SECRET=secret_key
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Container Frontend React Nginx
+  frontend:
+    build: ./frontend
+    container_name: clinic_frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
