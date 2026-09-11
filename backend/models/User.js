@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db'); 
 require('dotenv').config();
 
-
 const User = sequelize.define('User', {
     full_name: {
         type: DataTypes.STRING,
@@ -34,6 +33,8 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('admin', 'patient', 'doctor'),
         defaultValue: 'patient'
     }
+}, {
+    tableName: 'users'
 });
 
-module.exports =  User ;
+module.exports = User;

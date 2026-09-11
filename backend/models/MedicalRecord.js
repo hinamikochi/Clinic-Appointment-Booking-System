@@ -36,6 +36,8 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
         type: DataTypes.STRING,
         allowNull: true 
     }
+}, {
+    tableName: 'medicalrecords'
 });
 
 module.exports = MedicalRecord;

@@ -18,6 +18,8 @@ const DoctorInfo = sequelize.define('DoctorInfo', {
     roomNumber: { type: DataTypes.STRING },
     consultationFee: { type: DataTypes.INTEGER },
     description: { type: DataTypes.TEXT }
+}, {
+    tableName: 'doctorinfos'
 });
 
 DoctorInfo.belongsTo(User, { foreignKey: 'userId' });

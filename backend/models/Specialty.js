@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 require('dotenv').config();
 
-
 const Specialty = sequelize.define('Specialty', {
     name: {
         type: DataTypes.STRING,
@@ -16,7 +15,8 @@ const Specialty = sequelize.define('Specialty', {
         type: DataTypes.STRING,
         allowNull: true
     }
+}, {
+    tableName: 'specialties'
 });
 
-module.exports =  Specialty ;
-
+module.exports = Specialty;

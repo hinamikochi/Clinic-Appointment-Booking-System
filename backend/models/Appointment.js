@@ -51,6 +51,8 @@ const Appointment = sequelize.define('Appointment', {
         type: DataTypes.INTEGER,
         allowNull: true 
     }
+}, {
+    tableName: 'appointments'
 });
 
 module.exports = Appointment;
