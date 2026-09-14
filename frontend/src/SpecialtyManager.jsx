@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { 
   Building2, 
   Search, 
@@ -30,7 +30,7 @@ function SpecialtyManager({ onUpdate }) {
 
   const fetchSpecialties = async () => {
     try {
-      const res = await axios.get('http://localhost:5001/api/specialties');
+      const res = await api.get('/specialties');
       setSpecialties(res.data);
     } catch (err) {
       console.error("Lỗi lấy danh sách chuyên khoa:", err);
@@ -45,11 +45,7 @@ function SpecialtyManager({ onUpdate }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:5001/api/specialties', 
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/specialties', formData);
       alert('✅ Tạo chuyên khoa thành công!');
       setShowAddModal(false);
       setFormData({ name: '', description: '' });
@@ -73,11 +69,7 @@ function SpecialtyManager({ onUpdate }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
-        `http://localhost:5001/api/specialties/${editFormData.id}`,
-        { name: editFormData.name, description: editFormData.description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/specialties/${editFormData.id}`, { name: editFormData.name, description: editFormData.description });
       alert('✅ Cập nhật chuyên khoa thành công!');
       setShowEditModal(false);
       fetchSpecialties();
@@ -92,10 +84,7 @@ function SpecialtyManager({ onUpdate }) {
     if (!window.confirm('Bạn có chắc muốn xóa chuyên khoa này?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(
-        `http://localhost:5001/api/specialties/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.delete(`/specialties/${id}`);
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {

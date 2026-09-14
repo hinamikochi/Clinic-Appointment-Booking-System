@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import OverviewView from './components/OverviewView';
@@ -29,7 +29,7 @@ function AdminDashboard() {
 
   const fetchCounts = async () => {
     try {
-      const resSpec = await axios.get('http://localhost:5001/api/specialties');
+      const resSpec = await api.get('/specialties');
       setSpecCount(resSpec.data.length);
 
       const resDoc = await axios.get('http://localhost:5001/api/doctors');

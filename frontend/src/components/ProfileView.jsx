@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { User, KeyRound, Save, Award, Image } from 'lucide-react';
 
 export function ProfileView({ onUpdate }) {
@@ -27,7 +27,7 @@ export function ProfileView({ onUpdate }) {
     const fetchLatestUser = async () => {
       try {
         if (!initialUser.id) return;
-        const res = await axios.get(`http://localhost:5001/api/users/${initialUser.id}`);
+        const res = await api.get(`/users/${initialUser.id}`);
         if (res.data) {
           setUserInfo(res.data);
           setFullName(res.data.full_name || '');
@@ -52,7 +52,7 @@ export function ProfileView({ onUpdate }) {
     e.preventDefault();
     setUpdatingProfile(true);
     try {
-      const res = await axios.put(`http://localhost:5001/api/users/profile/${userInfo.id}`, {
+      const res = await api.put(`/users/profile/${userInfo.id}`, {
         full_name: fullName,
         phone,
         gender,
@@ -84,7 +84,7 @@ export function ProfileView({ onUpdate }) {
 
     setChangingPassword(true);
     try {
-      const res = await axios.put(`http://localhost:5001/api/users/change-password/${userInfo.id}`, {
+      const res =await api.put(`/users/change-password/${userInfo.id}`, {
         old_password: oldPassword,
         new_password: newPassword
       });

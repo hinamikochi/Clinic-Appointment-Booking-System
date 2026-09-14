@@ -8,13 +8,8 @@ import AdminDashboard from './AdminDashboard';
 import DoctorDashboard from './DoctorDashboard';
 import PatientDashboard from './PatientDashboard';
 import './App.css';
-import axios from 'axios';
+import api from './api';
 
-// Tự động đính kèm JWT Token vào Header của mọi request
-const token = localStorage.getItem('token');
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
 
 // Bảo vệ quyền Admin
 const ProtectedAdminRoute = ({ children }) => {

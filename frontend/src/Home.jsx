@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import BookingModal from './BookingModal';
 import { 
   CalendarCheck, 
@@ -25,10 +25,10 @@ function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resSpecs = await axios.get('http://localhost:5001/api/specialties');
+        const resSpecs = await api.get('/specialties');
         setSpecialties(resSpecs.data);
 
-        const resDocs = await axios.get('http://localhost:5001/api/doctors');
+        const resDocs = await api.get('/doctors');
         setDoctors(resDocs.data);
       } catch (err) {
         console.error("Lỗi nạp dữ liệu trang chủ:", err);

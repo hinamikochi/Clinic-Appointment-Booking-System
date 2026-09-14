@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -12,14 +12,13 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
-    
+  
     try {
-      const res = await axios.post('http://localhost:5001/api/login', formData);
+      const res = await api.post('/login', formData);
       const user = res.data.user;
 
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
 
       // Phân hướng theo vai trò (Role-based Routing)
       if (user.role === 'admin') {

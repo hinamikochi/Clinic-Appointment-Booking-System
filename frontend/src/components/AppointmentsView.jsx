@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { CalendarDays, FileText, Pill, Calendar, X, Search, Printer } from 'lucide-react';
 import { printPrescription } from '../utils/printHelper';
 
@@ -13,7 +13,7 @@ export function AppointmentsView() {
 
   const fetchAppointments = async () => {
     try {
-      const res = await axios.get('http://localhost:5001/api/appointments');
+      const res = await api.get('/appointments');
       setAppointments(res.data);
     } catch (err) {
       console.error("Lỗi tải danh sách lịch hẹn:", err);
@@ -26,7 +26,7 @@ export function AppointmentsView() {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5001/api/appointments/${id}/status`, { status });
+      await api.put(`/appointments/${id}/status`, { status });
       fetchAppointments();
     } catch (err) {
       alert("Lỗi cập nhật trạng thái lịch hẹn");

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { X, Plus, User, Stethoscope } from 'lucide-react';
 
 function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId }) {
@@ -23,10 +23,10 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resSpecs = await axios.get('http://localhost:5001/api/specialties');
+        const resSpecs = await api.get('/specialties');
         setSpecialties(resSpecs.data);
 
-        const resDocs = await axios.get('http://localhost:5001/api/doctors');
+        const resDocs = await api.get('/doctors');
         setDoctors(resDocs.data);
 
         // Tự động chọn Chuyên khoa & Bác sĩ đầu khi mở form đăng ký khám
@@ -71,7 +71,7 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:5001/api/appointments', {
+      await api.post('/appointments', {
         patient_name: patientName,
         patient_phone: patientPhone,
         patient_gender: patientGender,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { 
   Stethoscope, 
   Search, 
@@ -50,10 +50,10 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
   const fetchData = async () => {
     try {
-      const resDocs = await axios.get('http://localhost:5001/api/doctors');
+      const resDocs = await api.get('/doctors');
       setDoctors(resDocs.data);
 
-      const resSpecs = await axios.get('http://localhost:5001/api/specialties');
+      const resSpecs = await api.get('/specialties');
       setSpecialties(resSpecs.data);
       if (resSpecs.data.length > 0 && !formData.specialtyId) {
         setFormData(prev => ({ ...prev, specialtyId: resSpecs.data[0].id }));
@@ -87,9 +87,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put(`http://localhost:5001/api/admin/doctors/${editFormData.id}`, editFormData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/admin/doctors/${editFormData.id}`, editFormData);
       alert("🎉 " + res.data.message);
       setEditingDoctor(null);
       fetchData();
@@ -108,9 +106,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/admin/doctors', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/admin/doctors', formData);      
       alert("🎉 Tạo tài khoản Bác sĩ thành công!");
       setShowAddModal(false);
       setFormData({
@@ -135,9 +131,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bác sĩ này khỏi hệ thống?")) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/admin/doctors/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/doctors/${id}`);
       alert("Đã xóa bác sĩ thành công!");
       fetchData();
       if (onUpdate) onUpdate();

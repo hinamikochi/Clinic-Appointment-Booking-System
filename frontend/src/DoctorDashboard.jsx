@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { printPrescription } from './utils/printHelper';
-import axios from 'axios';
+import api from './api';
 import { useNavigate } from 'react-router-dom';
 import { 
   Stethoscope, 
@@ -38,11 +38,11 @@ function DoctorDashboard() {
   const fetchData = async () => {
     try {
       if (!user.id) return;
-      const resDoc = await axios.get(`http://localhost:5001/api/doctor/info/${user.id}`);
+      const resDoc = await api.get(`/doctor/info/${user.id}`);
       setDoctorInfo(resDoc.data);
 
       if (resDoc.data?.id) {
-        const resApts = await axios.get(`http://localhost:5001/api/doctor/appointments/${resDoc.data.id}`);
+        const resApts = await api.get(`/doctor/appointments/${resDoc.data.id}`);
         setAppointments(resApts.data);
       }
     } catch (err) {

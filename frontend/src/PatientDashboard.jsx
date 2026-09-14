@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useNavigate } from 'react-router-dom';
 import { 
   CalendarCheck, 
@@ -50,10 +50,10 @@ function PatientDashboard() {
   // Tải dữ liệu tự động
   const fetchData = async () => {
     try {
-      const resSpecs = await axios.get('http://localhost:5001/api/specialties');
+      const resSpecs = await api.get('/specialties');
       setSpecialties(resSpecs.data);
 
-      const resDocs = await axios.get('http://localhost:5001/api/doctors');
+      const resDocs = await api.get('/doctors');
       setDoctors(resDocs.data);
 
       if (resSpecs.data.length > 0) {
@@ -64,14 +64,14 @@ function PatientDashboard() {
       }
 
       if (initialUser.id) {
-        const resUser = await axios.get(`http://localhost:5001/api/users/${initialUser.id}`);
+        const resUser = await api.get(`/users/${initialUser.id}`);
         if (resUser.data) {
           setUserInfo(resUser.data);
           localStorage.setItem('user', JSON.stringify(resUser.data));
         }
 
         // Tải danh sách lịch hẹn kèm theo thông tin Bệnh án (MedicalRecord)
-        const resApts = await axios.get(`http://localhost:5001/api/patient/appointments/${initialUser.id}`);
+        const resApts = await api.get(`/patient/appointments/${initialUser.id}`);
         setMyAppointments(resApts.data);
       }
     } catch (err) {
@@ -130,7 +130,7 @@ function PatientDashboard() {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:5001/api/appointments', {
+      await api.post('/appointments', {
         patient_name: patientName,
         patient_phone: patientPhone,
         patient_gender: patientGender,
@@ -157,7 +157,7 @@ function PatientDashboard() {
   const handleCancelAppointment = async (id) => {
     if (!window.confirm("Bạn có chắc muốn hủy phiếu đặt lịch này?")) return;
     try {
-      await axios.put(`http://localhost:5001/api/appointments/${id}/cancel`);
+      await api.put(`/appointments/${id}/cancel`);
       alert("Đã hủy lịch hẹn thành công.");
       fetchData();
     } catch (err) {
