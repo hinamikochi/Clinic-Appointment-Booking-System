@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { toast } from 'react-hot-toast';
 import { User, KeyRound, Save, Award, Image } from 'lucide-react';
 
 export function ProfileView({ onUpdate }) {
@@ -60,12 +61,12 @@ export function ProfileView({ onUpdate }) {
         degree,
         image
       });
-      alert("🎉 " + res.data.message);
+      toast.success(res.data.message);
       setUserInfo(res.data.user);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi cập nhật hồ sơ");
+      toast.error(err.response?.data?.message || "Lỗi cập nhật hồ sơ");
     } finally {
       setUpdatingProfile(false);
     }
@@ -74,11 +75,11 @@ export function ProfileView({ onUpdate }) {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert("Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!");
+      toast.error("Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!");
       return;
     }
     if (newPassword.length < 6) {
-      alert("Mật khẩu mới phải có ít nhất 6 ký tự!");
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!");
       return;
     }
 
@@ -88,12 +89,12 @@ export function ProfileView({ onUpdate }) {
         old_password: oldPassword,
         new_password: newPassword
       });
-      alert("🎉 " + res.data.message);
+      toast.success(res.data.message);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi đổi mật khẩu");
+      toast.error(err.response?.data?.message || "Lỗi khi đổi mật khẩu");
     } finally {
       setChangingPassword(false);
     }

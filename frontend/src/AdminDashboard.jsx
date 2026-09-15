@@ -32,7 +32,7 @@ function AdminDashboard() {
       const resSpec = await api.get('/specialties');
       setSpecCount(resSpec.data.length);
 
-      const resDoc = await axios.get('http://localhost:5001/api/doctors');
+      const resDoc = await api.get('/doctors');
       setDocCount(resDoc.data.length);
     } catch (err) {
       console.error('Lỗi cập nhật thống kê:', err);

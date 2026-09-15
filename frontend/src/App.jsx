@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './Navbar';
 import Home from './Home';
 import Register from './Register';
@@ -103,6 +104,18 @@ function MainLayout() {
 function App() {
   return (
     <Router>
+      <Toaster 
+        position="top-center"
+        reverseOrder={false}
+        containerStyle={{
+          zIndex: 9999999
+        }}
+        toastOptions={{
+          style: {
+            zIndex: 9999999
+          }
+        }}
+      />
       <MainLayout />
     </Router>
   );

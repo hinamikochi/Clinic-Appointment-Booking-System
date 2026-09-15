@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { 
   CalendarCheck, 
   History, 
@@ -120,11 +121,11 @@ function PatientDashboard() {
   const handleCreateAppointment = async (e) => {
     e.preventDefault();
     if (!patientName.trim() || !patientPhone.trim()) {
-      alert("Vui lòng điền họ tên và số điện thoại!");
+      toast.error('Vui lòng điền họ tên và số điện thoại!');
       return;
     }
     if (!doctorId) {
-      alert("Vui lòng chọn bác sĩ khám!");
+      toast.error("Vui lòng chọn bác sĩ khám!");
       return;
     }
 
@@ -143,12 +144,12 @@ function PatientDashboard() {
         userId: userInfo.id
       });
 
-      alert("🎉 Đặt lịch khám bệnh thành công! Phiếu đặt của bạn đang chờ phòng khám duyệt.");
+      toast.success(" Đặt lịch khám bệnh thành công!");
       setSymptoms('');
       fetchData();
       setActiveTab('my-appointments');
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi đặt lịch khám");
+      toast.error(err.response?.data?.message || "Lỗi đặt lịch khám");
     } finally {
       setLoading(false);
     }
@@ -158,10 +159,10 @@ function PatientDashboard() {
     if (!window.confirm("Bạn có chắc muốn hủy phiếu đặt lịch này?")) return;
     try {
       await api.put(`/appointments/${id}/cancel`);
-      alert("Đã hủy lịch hẹn thành công.");
+      toast.success("Đã hủy lịch hẹn thành công.");
       fetchData();
     } catch (err) {
-      alert("Lỗi khi hủy lịch hẹn");
+      toast.error("Lỗi khi hủy lịch hẹn");
     }
   };
 

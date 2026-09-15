@@ -31,7 +31,7 @@ export function OverviewView({ docCount, specCount, setActiveTab }) {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5001/api/admin/dashboard-stats');
+        const res = await api.get('/admin/dashboard-stats');
         setStats(res.data);
       } catch (err) {
         console.error("Lỗi nạp dữ liệu thống kê Dashboard từ CSDL:", err);

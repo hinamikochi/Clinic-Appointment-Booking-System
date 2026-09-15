@@ -19,13 +19,13 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
 
   const fetchData = async () => {
     try {
-      const resDocs = await axios.get('http://localhost:5001/api/doctors');
+      const resDocs = await api.get('/doctors');
       setDoctors(resDocs.data);
 
-      const resSpecs = await axios.get('http://localhost:5001/api/specialties');
+      const resSpecs = await api.get('/specialties');
       setSpecialties(resSpecs.data);
 
-      const resApts = await axios.get('http://localhost:5001/api/appointments');
+      const resApts = await api.get('/appointments');
       setAppointments(resApts.data);
 
       const pending = resApts.data.filter(a => a.status === 'pending');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
+import { toast } from 'react-hot-toast';
 import { 
   Building2, 
   Search, 
@@ -46,13 +47,13 @@ function SpecialtyManager({ onUpdate }) {
     try {
       const token = localStorage.getItem('token');
       await api.post('/specialties', formData);
-      alert('✅ Tạo chuyên khoa thành công!');
+      toast.success('Tạo chuyên khoa thành công!');
       setShowAddModal(false);
       setFormData({ name: '', description: '' });
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert('Lỗi tạo chuyên khoa');
+      toast.error('Lỗi tạo chuyên khoa');
     }
   };
 
@@ -70,13 +71,13 @@ function SpecialtyManager({ onUpdate }) {
     try {
       const token = localStorage.getItem('token');
       await api.put(`/specialties/${editFormData.id}`, { name: editFormData.name, description: editFormData.description });
-      alert('✅ Cập nhật chuyên khoa thành công!');
+      toast.success('Cập nhật chuyên khoa thành công!');
       setShowEditModal(false);
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {
       console.error(err);
-      alert('Lỗi cập nhật chuyên khoa!');
+      toast.error('Lỗi cập nhật chuyên khoa!');
     }
   };
 
@@ -85,10 +86,11 @@ function SpecialtyManager({ onUpdate }) {
     try {
       const token = localStorage.getItem('token');
       await api.delete(`/specialties/${id}`);
+      toast.success('Đã xóa chuyên khoa thành công!');
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert('Không thể xóa chuyên khoa này');
+      toast.error('Không thể xóa chuyên khoa này');
     }
   };
 

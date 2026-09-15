@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { printPrescription } from './utils/printHelper';
 import api from './api';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { 
   Stethoscope, 
@@ -73,13 +74,13 @@ function DoctorDashboard() {
   const handleSaveMedicalRecord = async (e) => {
     e.preventDefault();
     if (!selectedAppointment || !diagnosis.trim()) {
-      alert("Vui lòng nhập chẩn đoán bệnh cho bệnh nhân!");
+     toast.error("Vui lòng nhập chẩn đoán bệnh cho bệnh nhân!");
       return;
     }
 
     setSaving(true);
     try {
-      await axios.post('http://localhost:5001/api/medical-records', {
+      await api.post('/medical-records', {
         appointmentId: selectedAppointment.id,
         patientId: selectedAppointment.userId,
         doctorId: doctorInfo.id,
@@ -89,11 +90,11 @@ function DoctorDashboard() {
         re_visit_date: reVisitDate
       });
 
-      alert("🎉 Đã lưu kết quả khám & đơn thuốc thành công! Ca khám hoàn tất.");
+      toast.success(" Đã lưu kết quả khám & đơn thuốc thành công!");
       fetchData();
       setActiveTab('appointments');
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi lưu hồ sơ bệnh án");
+     toast.error(err.response?.data?.message || "Lỗi lưu hồ sơ bệnh án");
     } finally {
       setSaving(false);
     }

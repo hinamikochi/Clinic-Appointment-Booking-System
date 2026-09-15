@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import { X, Plus, User, Stethoscope } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId }) {
   const [specialties, setSpecialties] = useState([]);
@@ -61,11 +62,11 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!patientName.trim() || !patientPhone.trim()) {
-      alert('Vui lòng điền họ tên và số điện thoại!');
-      return;
+  toast.error('Vui lòng điền họ tên và số điện thoại!');
+  return;
     }
     if (!doctorId) {
-      alert('Vui lòng chọn bác sĩ tiếp nhận!');
+      toast.error('Vui lòng chọn bác sĩ tiếp nhận!');
       return;
     }
 
@@ -83,11 +84,11 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
         symptoms
       });
 
-      alert('🎉 Đặt lịch khám bệnh thành công! Phòng khám sẽ liên hệ xác nhận với bạn.');
+      toast.success(' Đặt lịch khám bệnh thành công! Phòng khám sẽ liên hệ xác nhận với bạn.');
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch khám');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch khám');
     } finally {
       setLoading(false);
     }

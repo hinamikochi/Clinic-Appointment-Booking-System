@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
+import { toast } from 'react-hot-toast';
 import { 
   Stethoscope, 
   Search, 
@@ -88,27 +89,26 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     try {
       const token = localStorage.getItem('token');
       await api.put(`/admin/doctors/${editFormData.id}`, editFormData);
-      alert("🎉 " + res.data.message);
+      toast.success("Cập nhật thông tin Bác sĩ thành công!");
       setEditingDoctor(null);
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi cập nhật bác sĩ");
+      toast.error(err.response?.data?.message || "Lỗi khi cập nhật bác sĩ");
     }
   };
 
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     if (!formData.full_name || !formData.email || !formData.password || !formData.specialtyId) {
-      alert("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc!");
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
       await api.post('/admin/doctors', formData);      
-      alert("🎉 Tạo tài khoản Bác sĩ thành công!");
-      setShowAddModal(false);
+     toast.success(" Tạo tài khoản Bác sĩ thành công!");
       setFormData({
         full_name: '',
         email: '',
@@ -123,7 +123,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi tạo bác sĩ");
+      toast.error(err.response?.data?.message || "Lỗi khi tạo bác sĩ");
     }
   };
 
@@ -132,11 +132,11 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     try {
       const token = localStorage.getItem('token');
       await api.delete(`/admin/doctors/${id}`);
-      alert("Đã xóa bác sĩ thành công!");
+      toast.success("Đã xóa bác sĩ thành công!");
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi khi xóa bác sĩ");
+      toast.error("Lỗi khi xóa bác sĩ");
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { toast } from 'react-hot-toast';
 import { CalendarDays, FileText, Pill, Calendar, X, Search, Printer } from 'lucide-react';
 import { printPrescription } from '../utils/printHelper';
 
@@ -27,9 +28,10 @@ export function AppointmentsView() {
   const handleUpdateStatus = async (id, status) => {
     try {
       await api.put(`/appointments/${id}/status`, { status });
+      toast.success("Cập nhật trạng thái lịch hẹn thành công!");
       fetchAppointments();
     } catch (err) {
-      alert("Lỗi cập nhật trạng thái lịch hẹn");
+      toast.error("Lỗi cập nhật trạng thái lịch hẹn");
     }
   };
 
