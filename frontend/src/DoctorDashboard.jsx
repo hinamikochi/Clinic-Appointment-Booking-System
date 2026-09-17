@@ -299,28 +299,61 @@ function DoctorDashboard() {
                 </table>
                </div>  
 
-               {/* Thanh phân trang ca khám chờ */}
-               {totalPendingPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
-                  <button 
-                    disabled={pendingPage === 1}
-                    onClick={() => setPendingPage(prev => Math.max(prev - 1, 1))}
-                    style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: pendingPage === 1 ? '#f5f5f0' : '#ffffff', color: pendingPage === 1 ? '#aaa' : '#2d2d2a', cursor: pendingPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
-                  >
-                    &lt; Trang trước
-                  </button>
-                  <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
-                    Trang {pendingPage} / {totalPendingPages}
-                  </span>
-                  <button 
-                    disabled={pendingPage === totalPendingPages}
-                    onClick={() => setPendingPage(prev => Math.min(prev + 1, totalPendingPages))}
-                    style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: pendingPage === totalPendingPages ? '#f5f5f0' : '#ffffff', color: pendingPage === totalPendingPages ? '#aaa' : '#2d2d2a', cursor: pendingPage === totalPendingPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
-                  >
-                    Trang sau &gt;
-                  </button>
-                </div>
-               )}
+                {/* Thanh phân trang ca khám chờ */}
+                {totalPendingPages > 1 && ( 
+                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
+                   <button 
+                     disabled={pendingPage === 1}
+                     onClick={() => setPendingPage(prev => Math.max(prev - 1, 1))}
+                     style={{ 
+                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                       width: '34px', height: '34px', borderRadius: '50%',
+                       border: '1px solid #e6e6df', 
+                       backgroundColor: pendingPage === 1 ? '#f5f5f0' : '#ffffff', 
+                       color: pendingPage === 1 ? '#cccccc' : '#5a5a40', 
+                       cursor: pendingPage === 1 ? 'not-allowed' : 'pointer',
+                       transition: 'all 0.2s ease'
+                     }}
+                   >
+                     ‹
+                   </button>
+
+                   {Array.from({ length: totalPendingPages }, (_, i) => i + 1).map((page) => (
+                     <button
+                       key={page}
+                       onClick={() => setPendingPage(page)}
+                       style={{
+                         minWidth: '34px', height: '34px', padding: '0 8px', borderRadius: '99px',
+                         border: page === pendingPage ? '1px solid #5a5a40' : '1px solid #e6e6df',
+                         backgroundColor: page === pendingPage ? '#5a5a40' : '#ffffff',
+                         color: page === pendingPage ? '#ffffff' : '#2d2d2a',
+                         fontWeight: page === pendingPage ? '700' : '500',
+                         fontSize: '13px', cursor: 'pointer',
+                         transition: 'all 0.2s ease',
+                         boxShadow: page === pendingPage ? '0 3px 8px rgba(90, 90, 64, 0.2)' : 'none'
+                       }}
+                     >
+                       {page}
+                     </button>
+                   ))}
+
+                   <button 
+                     disabled={pendingPage === totalPendingPages}
+                     onClick={() => setPendingPage(prev => Math.min(prev + 1, totalPendingPages))}
+                     style={{ 
+                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                       width: '34px', height: '34px', borderRadius: '50%',
+                       border: '1px solid #e6e6df', 
+                       backgroundColor: pendingPage === totalPendingPages ? '#f5f5f0' : '#ffffff', 
+                       color: pendingPage === totalPendingPages ? '#cccccc' : '#5a5a40', 
+                       cursor: pendingPage === totalPendingPages ? 'not-allowed' : 'pointer',
+                       transition: 'all 0.2s ease'
+                     }}
+                   >
+                     ›
+                   </button>
+                 </div>
+                )}
               </div>
             </div>
           )}

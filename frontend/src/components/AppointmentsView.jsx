@@ -176,23 +176,56 @@ export function AppointmentsView() {
 
        {/* Thanh Phân Trang */}
        {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px', paddingBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', paddingBottom: '8px' }}>
           <button 
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: currentPage === 1 ? '#f5f5f0' : '#ffffff', color: currentPage === 1 ? '#aaa' : '#2d2d2a', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+            style={{ 
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: '34px', height: '34px', borderRadius: '50%',
+              border: '1px solid #e6e6df', 
+              backgroundColor: currentPage === 1 ? '#f5f5f0' : '#ffffff', 
+              color: currentPage === 1 ? '#cccccc' : '#5a5a40', 
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease'
+            }}
           >
-            &lt; Trang trước
+            ‹
           </button>
-          <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
-            Trang {currentPage} / {totalPages}
-          </span>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              style={{
+                minWidth: '34px', height: '34px', padding: '0 8px', borderRadius: '99px',
+                border: page === currentPage ? '1px solid #5a5a40' : '1px solid #e6e6df',
+                backgroundColor: page === currentPage ? '#5a5a40' : '#ffffff',
+                color: page === currentPage ? '#ffffff' : '#2d2d2a',
+                fontWeight: page === currentPage ? '700' : '500',
+                fontSize: '13px', cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: page === currentPage ? '0 3px 8px rgba(90, 90, 64, 0.2)' : 'none'
+              }}
+            >
+              {page}
+            </button>
+          ))}
+
           <button 
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: currentPage === totalPages ? '#f5f5f0' : '#ffffff', color: currentPage === totalPages ? '#aaa' : '#2d2d2a', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+            style={{ 
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: '34px', height: '34px', borderRadius: '50%',
+              border: '1px solid #e6e6df', 
+              backgroundColor: currentPage === totalPages ? '#f5f5f0' : '#ffffff', 
+              color: currentPage === totalPages ? '#cccccc' : '#5a5a40', 
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease'
+            }}
           >
-            Trang sau &gt;
+            ›
           </button>
         </div>
        )}

@@ -358,25 +358,56 @@ function PatientDashboard() {
 
               {/* Thanh điều khiển phân trang */}
               {totalAptPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
                   <button 
-                    className="btn-secondary-natural" 
                     disabled={aptPage === 1}
                     onClick={() => setAptPage(prev => Math.max(prev - 1, 1))}
-                    style={{ padding: '6px 12px', fontSize: '13px', cursor: aptPage === 1 ? 'not-allowed' : 'pointer', opacity: aptPage === 1 ? 0.5 : 1 }}
+                    style={{ 
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: '34px', height: '34px', borderRadius: '50%',
+                      border: '1px solid #e6e6df', 
+                      backgroundColor: aptPage === 1 ? '#f5f5f0' : '#ffffff', 
+                      color: aptPage === 1 ? '#cccccc' : '#5a5a40', 
+                      cursor: aptPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
                   >
-                    Trang trước
+                    ‹
                   </button>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#5a5a40' }}>
-                    Trang {aptPage} / {totalAptPages}
-                  </span>
+
+                  {Array.from({ length: totalAptPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setAptPage(page)}
+                      style={{
+                        minWidth: '34px', height: '34px', padding: '0 8px', borderRadius: '99px',
+                        border: page === aptPage ? '1px solid #5a5a40' : '1px solid #e6e6df',
+                        backgroundColor: page === aptPage ? '#5a5a40' : '#ffffff',
+                        color: page === aptPage ? '#ffffff' : '#2d2d2a',
+                        fontWeight: page === aptPage ? '700' : '500',
+                        fontSize: '13px', cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: page === aptPage ? '0 3px 8px rgba(90, 90, 64, 0.2)' : 'none'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
                   <button 
-                    className="btn-secondary-natural" 
                     disabled={aptPage === totalAptPages}
                     onClick={() => setAptPage(prev => Math.min(prev + 1, totalAptPages))}
-                    style={{ padding: '6px 12px', fontSize: '13px', cursor: aptPage === totalAptPages ? 'not-allowed' : 'pointer', opacity: aptPage === totalAptPages ? 0.5 : 1 }}
+                    style={{ 
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: '34px', height: '34px', borderRadius: '50%',
+                      border: '1px solid #e6e6df', 
+                      backgroundColor: aptPage === totalAptPages ? '#f5f5f0' : '#ffffff', 
+                      color: aptPage === totalAptPages ? '#cccccc' : '#5a5a40', 
+                      cursor: aptPage === totalAptPages ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
                   >
-                    Trang sau
+                    ›
                   </button>
                 </div>
               )}

@@ -10,6 +10,7 @@ import {
   Award, 
   UserCheck,
   ChevronRight,
+  ChevronLeft,
   Sparkles
 } from 'lucide-react';
 
@@ -445,23 +446,60 @@ function Home() {
 
           {/* Thanh phân trang chuyên khoa */}
           {totalSpecPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '28px' }}>
               <button 
                 disabled={specPage === 1}
                 onClick={() => setSpecPage(prev => Math.max(prev - 1, 1))}
-                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: specPage === 1 ? '#f5f5f0' : '#ffffff', color: specPage === 1 ? '#aaa' : '#2d2d2a', cursor: specPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  border: '1px solid #e6e6df', 
+                  backgroundColor: specPage === 1 ? '#f5f5f0' : '#ffffff', 
+                  color: specPage === 1 ? '#cccccc' : '#5a5a40', 
+                  cursor: specPage === 1 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: specPage === 1 ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title="Trang trước"
               >
-                &lt; Trang trước
+                <ChevronLeft size={18} />
               </button>
-              <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
-                Trang {specPage} / {totalSpecPages}
-              </span>
+
+              {Array.from({ length: totalSpecPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setSpecPage(page)}
+                  style={{
+                    minWidth: '36px', height: '36px', padding: '0 10px', borderRadius: '99px',
+                    border: page === specPage ? '1px solid #5a5a40' : '1px solid #e6e6df',
+                    backgroundColor: page === specPage ? '#5a5a40' : '#ffffff',
+                    color: page === specPage ? '#ffffff' : '#2d2d2a',
+                    fontWeight: page === specPage ? '700' : '500',
+                    fontSize: '13px', cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: page === specPage ? '0 4px 10px rgba(90, 90, 64, 0.25)' : 'none'
+                  }}
+                >
+                  {page}
+                </button>
+              ))}
+
               <button 
                 disabled={specPage === totalSpecPages}
                 onClick={() => setSpecPage(prev => Math.min(prev + 1, totalSpecPages))}
-                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: specPage === totalSpecPages ? '#f5f5f0' : '#ffffff', color: specPage === totalSpecPages ? '#aaa' : '#2d2d2a', cursor: specPage === totalSpecPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  border: '1px solid #e6e6df', 
+                  backgroundColor: specPage === totalSpecPages ? '#f5f5f0' : '#ffffff', 
+                  color: specPage === totalSpecPages ? '#cccccc' : '#5a5a40', 
+                  cursor: specPage === totalSpecPages ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: specPage === totalSpecPages ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title="Trang sau"
               >
-                Trang sau &gt;
+                <ChevronRight size={18} />
               </button>
             </div>
           )}
@@ -578,23 +616,60 @@ function Home() {
 
           {/* Thanh phân trang bác sĩ */}
           {totalDocPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '28px' }}>
               <button 
                 disabled={docPage === 1}
                 onClick={() => setDocPage(prev => Math.max(prev - 1, 1))}
-                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: docPage === 1 ? '#f5f5f0' : '#ffffff', color: docPage === 1 ? '#aaa' : '#2d2d2a', cursor: docPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  border: '1px solid #e6e6df', 
+                  backgroundColor: docPage === 1 ? '#f5f5f0' : '#ffffff', 
+                  color: docPage === 1 ? '#cccccc' : '#5a5a40', 
+                  cursor: docPage === 1 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: docPage === 1 ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title="Trang trước"
               >
-                &lt; Trang trước
+                <ChevronLeft size={18} />
               </button>
-              <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
-                Trang {docPage} / {totalDocPages}
-              </span>
+
+              {Array.from({ length: totalDocPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setDocPage(page)}
+                  style={{
+                    minWidth: '36px', height: '36px', padding: '0 10px', borderRadius: '99px',
+                    border: page === docPage ? '1px solid #5a5a40' : '1px solid #e6e6df',
+                    backgroundColor: page === docPage ? '#5a5a40' : '#ffffff',
+                    color: page === docPage ? '#ffffff' : '#2d2d2a',
+                    fontWeight: page === docPage ? '700' : '500',
+                    fontSize: '13px', cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: page === docPage ? '0 4px 10px rgba(90, 90, 64, 0.25)' : 'none'
+                  }}
+                >
+                  {page}
+                </button>
+              ))}
+
               <button 
                 disabled={docPage === totalDocPages}
                 onClick={() => setDocPage(prev => Math.min(prev + 1, totalDocPages))}
-                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: docPage === totalDocPages ? '#f5f5f0' : '#ffffff', color: docPage === totalDocPages ? '#aaa' : '#2d2d2a', cursor: docPage === totalDocPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  border: '1px solid #e6e6df', 
+                  backgroundColor: docPage === totalDocPages ? '#f5f5f0' : '#ffffff', 
+                  color: docPage === totalDocPages ? '#cccccc' : '#5a5a40', 
+                  cursor: docPage === totalDocPages ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: docPage === totalDocPages ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
+                }}
+                title="Trang sau"
               >
-                Trang sau &gt;
+                <ChevronRight size={18} />
               </button>
             </div>
           )}
