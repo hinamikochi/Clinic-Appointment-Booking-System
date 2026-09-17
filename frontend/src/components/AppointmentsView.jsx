@@ -8,6 +8,10 @@ export function AppointmentsView() {
   const [appointments, setAppointments] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
 
+  // State Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   // State Modal xem Bệnh án dành cho Admin
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
@@ -48,6 +52,14 @@ export function AppointmentsView() {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
     return true;
   });
+
+  // chuyển về trang đầu tiên khi đổi trạng thái lọc 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
@@ -92,8 +104,8 @@ export function AppointmentsView() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length > 0 ? (
-              filtered.map((apt) => (
+            {paginated.length > 0 ? (
+              paginated.map((apt) => (
                 <tr key={apt.id}>
                   <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
                   <td style={{ fontWeight: '600' }}>{apt.patient_name}</td>
@@ -161,6 +173,29 @@ export function AppointmentsView() {
           </tbody>
         </table>
        </div>
+
+       {/* Thanh Phân Trang */}
+       {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px', paddingBottom: '8px' }}>
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: currentPage === 1 ? '#f5f5f0' : '#ffffff', color: currentPage === 1 ? '#aaa' : '#2d2d2a', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+          >
+            &lt; Trang trước
+          </button>
+          <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
+            Trang {currentPage} / {totalPages}
+          </span>
+          <button 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: currentPage === totalPages ? '#f5f5f0' : '#ffffff', color: currentPage === totalPages ? '#aaa' : '#2d2d2a', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+          >
+            Trang sau &gt;
+          </button>
+        </div>
+       )}
       </div>
 
       {/* MODAL XEM CHI TIẾT BỆNH ÁN DÀNH CHO ADMIN */}

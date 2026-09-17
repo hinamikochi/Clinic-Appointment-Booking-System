@@ -43,6 +43,8 @@ function PatientDashboard() {
 
   // Lịch hẹn cá nhân của tôi
   const [myAppointments, setMyAppointments] = useState([]);
+  const [aptPage, setAptPage] = useState(1);
+  const aptsPerPage = 5;
 
   // State Modal Xem Đơn Thuốc / Kết Quả Khám
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -183,6 +185,10 @@ function PatientDashboard() {
 
   const availableDoctors = doctors.filter(d => String(d.specialtyId) === String(specialtyId));
 
+  // phân trang lịch khám
+  const totalAptPages = Math.ceil(myAppointments.length / aptsPerPage) || 1;
+  const paginatedAppointments = myAppointments.slice((aptPage - 1) * aptsPerPage, aptPage * aptsPerPage);
+
   return (
     <div className="admin-layout">
       {/* Sidebar Bệnh Nhân */}
@@ -289,8 +295,8 @@ function PatientDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {myAppointments.length > 0 ? (
-                    myAppointments.map((apt) => (
+                  {paginatedAppointments.length > 0 ? (
+                    paginatedAppointments.map((apt) => (
                       <tr key={apt.id}>
                         <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
                         <td>{apt.Specialty?.name || 'Chuyên Khoa'}</td>
@@ -349,6 +355,31 @@ function PatientDashboard() {
                 </tbody>
               </table>
               </div>
+
+              {/* Thanh điều khiển phân trang */}
+              {totalAptPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+                  <button 
+                    className="btn-secondary-natural" 
+                    disabled={aptPage === 1}
+                    onClick={() => setAptPage(prev => Math.max(prev - 1, 1))}
+                    style={{ padding: '6px 12px', fontSize: '13px', cursor: aptPage === 1 ? 'not-allowed' : 'pointer', opacity: aptPage === 1 ? 0.5 : 1 }}
+                  >
+                    Trang trước
+                  </button>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#5a5a40' }}>
+                    Trang {aptPage} / {totalAptPages}
+                  </span>
+                  <button 
+                    className="btn-secondary-natural" 
+                    disabled={aptPage === totalAptPages}
+                    onClick={() => setAptPage(prev => Math.min(prev + 1, totalAptPages))}
+                    style={{ padding: '6px 12px', fontSize: '13px', cursor: aptPage === totalAptPages ? 'not-allowed' : 'pointer', opacity: aptPage === totalAptPages ? 0.5 : 1 }}
+                  >
+                    Trang sau
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

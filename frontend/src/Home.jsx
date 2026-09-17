@@ -21,6 +21,25 @@ function Home() {
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
+  // Phân trang chuyên khoa và bác sĩ
+  const [specPage, setSpecPage] = useState(1);
+  const itemsPerPageSpec = 6;
+
+  const [docPage, setDocPage] = useState(1);
+  const itemsPerPageDoc = 6;
+
+  const totalSpecPages = Math.ceil(specialties.length / itemsPerPageSpec) || 1;
+  const paginatedSpecialties = specialties.slice(
+    (specPage - 1) * itemsPerPageSpec,
+    specPage * itemsPerPageSpec
+  );
+
+  const totalDocPages = Math.ceil(doctors.length / itemsPerPageDoc) || 1;
+  const paginatedDoctors = doctors.slice(
+    (docPage - 1) * itemsPerPageDoc,
+    docPage * itemsPerPageDoc
+  );
+
   // Tải dữ liệu từ db
   useEffect(() => {
     const fetchData = async () => {
@@ -398,8 +417,8 @@ function Home() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
-            {specialties.length > 0 ? (
-              specialties.map((spec) => (
+            {paginatedSpecialties.length > 0 ? (
+              paginatedSpecialties.map((spec) => (
                 <div 
                   key={spec.id}
                   style={{
@@ -423,6 +442,29 @@ function Home() {
               <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>Đang nạp danh sách chuyên khoa...</div>
             )}
           </div>
+
+          {/* Thanh phân trang chuyên khoa */}
+          {totalSpecPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+              <button 
+                disabled={specPage === 1}
+                onClick={() => setSpecPage(prev => Math.max(prev - 1, 1))}
+                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: specPage === 1 ? '#f5f5f0' : '#ffffff', color: specPage === 1 ? '#aaa' : '#2d2d2a', cursor: specPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+              >
+                &lt; Trang trước
+              </button>
+              <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
+                Trang {specPage} / {totalSpecPages}
+              </span>
+              <button 
+                disabled={specPage === totalSpecPages}
+                onClick={() => setSpecPage(prev => Math.min(prev + 1, totalSpecPages))}
+                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: specPage === totalSpecPages ? '#f5f5f0' : '#ffffff', color: specPage === totalSpecPages ? '#aaa' : '#2d2d2a', cursor: specPage === totalSpecPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+              >
+                Trang sau &gt;
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -439,9 +481,9 @@ function Home() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-            {doctors.length > 0 ? (
-              doctors.map((doc) => (
-                                <div 
+            {paginatedDoctors.length > 0 ? (
+              paginatedDoctors.map((doc) => (
+                <div 
                   key={doc.id}
                   style={{
                     backgroundColor: '#ffffff', 
@@ -533,6 +575,29 @@ function Home() {
               <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>Đang nạp danh sách bác sĩ...</div>
             )}
           </div>
+
+          {/* Thanh phân trang bác sĩ */}
+          {totalDocPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '28px' }}>
+              <button 
+                disabled={docPage === 1}
+                onClick={() => setDocPage(prev => Math.max(prev - 1, 1))}
+                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: docPage === 1 ? '#f5f5f0' : '#ffffff', color: docPage === 1 ? '#aaa' : '#2d2d2a', cursor: docPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+              >
+                &lt; Trang trước
+              </button>
+              <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
+                Trang {docPage} / {totalDocPages}
+              </span>
+              <button 
+                disabled={docPage === totalDocPages}
+                onClick={() => setDocPage(prev => Math.min(prev + 1, totalDocPages))}
+                style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: docPage === totalDocPages ? '#f5f5f0' : '#ffffff', color: docPage === totalDocPages ? '#aaa' : '#2d2d2a', cursor: docPage === totalDocPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+              >
+                Trang sau &gt;
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

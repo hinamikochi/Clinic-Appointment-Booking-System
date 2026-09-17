@@ -36,6 +36,13 @@ function DoctorDashboard() {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // State phân trang cho danh sách ca khám
+  const [pendingPage, setPendingPage] = useState(1);
+  const itemsPerPagePending = 6;
+
+  const [completedPage, setCompletedPage] = useState(1);
+  const itemsPerPageCompleted = 6;
+
   const fetchData = async () => {
     try {
       if (!user.id) return;
@@ -114,6 +121,18 @@ function DoctorDashboard() {
 
   const pendingList = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
   const completedList = filteredAppointments.filter(a => a.status === 'completed');
+
+  // chuyển về trang đầu tiên khi tìm kiếm
+  useEffect(() => {
+    setPendingPage(1);
+    setCompletedPage(1);
+  }, [searchQuery]);
+
+  const totalPendingPages = Math.ceil(pendingList.length / itemsPerPagePending) || 1;
+  const paginatedPendingList = pendingList.slice((pendingPage - 1) * itemsPerPagePending, pendingPage * itemsPerPagePending);
+
+  const totalCompletedPages = Math.ceil(completedList.length / itemsPerPageCompleted) || 1;
+  const paginatedCompletedList = completedList.slice((completedPage - 1) * itemsPerPageCompleted, completedPage * itemsPerPageCompleted);
 
   return (
     <div className="admin-layout">
@@ -241,8 +260,8 @@ function DoctorDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pendingList.length > 0 ? (
-                      pendingList.map((apt) => (
+                    {paginatedPendingList.length > 0 ? (
+                      paginatedPendingList.map((apt) => (
                         <tr key={apt.id}>
                           <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
                           <td style={{ fontWeight: '700', color: '#2d2d2a' }}>{apt.patient_name}</td>
@@ -279,6 +298,29 @@ function DoctorDashboard() {
                   </tbody>
                 </table>
                </div>  
+
+               {/* Thanh phân trang ca khám chờ */}
+               {totalPendingPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+                  <button 
+                    disabled={pendingPage === 1}
+                    onClick={() => setPendingPage(prev => Math.max(prev - 1, 1))}
+                    style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: pendingPage === 1 ? '#f5f5f0' : '#ffffff', color: pendingPage === 1 ? '#aaa' : '#2d2d2a', cursor: pendingPage === 1 ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    &lt; Trang trước
+                  </button>
+                  <span style={{ fontSize: '13px', color: '#5a5a40', fontWeight: '600' }}>
+                    Trang {pendingPage} / {totalPendingPages}
+                  </span>
+                  <button 
+                    disabled={pendingPage === totalPendingPages}
+                    onClick={() => setPendingPage(prev => Math.min(prev + 1, totalPendingPages))}
+                    style={{ padding: '6px 14px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: pendingPage === totalPendingPages ? '#f5f5f0' : '#ffffff', color: pendingPage === totalPendingPages ? '#aaa' : '#2d2d2a', cursor: pendingPage === totalPendingPages ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    Trang sau &gt;
+                  </button>
+                </div>
+               )}
               </div>
             </div>
           )}
