@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from './api';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
@@ -20,6 +20,10 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    document.title = "MyClinic - Đăng Nhập Hệ Thống";
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

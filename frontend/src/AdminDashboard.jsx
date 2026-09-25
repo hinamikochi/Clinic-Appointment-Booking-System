@@ -40,6 +40,7 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
+    document.title = "MyClinic - Quản Trị Hệ Thống";
     fetchCounts();
   }, []);
 

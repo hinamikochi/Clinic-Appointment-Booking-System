@@ -83,6 +83,7 @@ function PatientDashboard() {
   };
 
   useEffect(() => {
+    document.title = "MyClinic - Cổng Thông Tin Bệnh Nhân";
     fetchData();
   }, []);
 

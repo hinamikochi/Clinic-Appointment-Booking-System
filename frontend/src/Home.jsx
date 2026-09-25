@@ -43,6 +43,7 @@ function Home() {
 
   // Tải dữ liệu từ db
   useEffect(() => {
+    document.title = "MyClinic - Trang Chủ Đặt Lịch Khám";
     const fetchData = async () => {
       try {
         const resSpecs = await api.get('/specialties');

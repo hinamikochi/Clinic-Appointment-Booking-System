@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from './api';
 import { useNavigate, Link } from 'react-router-dom'; 
 import { toast } from 'react-hot-toast';
@@ -21,6 +21,10 @@ function Register() {
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    document.title = "MyClinic - Đăng Ký Tài Khoản";
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

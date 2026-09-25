@@ -59,6 +59,7 @@ function DoctorDashboard() {
   };
 
   useEffect(() => {
+    document.title = "MyClinic - Dashboard Bác Sĩ Khám Bệnh";
     fetchData();
   }, []);
 
