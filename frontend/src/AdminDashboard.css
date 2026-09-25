@@ -176,21 +176,24 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Header */
 .admin-header-bar {
   height: 70px;
-  background-color: var(--card);
+  flex-shrink: 0;
+  background-color: rgba(253, 251, 247, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 90;
+  position: relative;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 .header-search {
@@ -259,6 +262,7 @@
 .admin-body {
   padding: 28px;
   flex: 1;
+  overflow-y: auto;
 }
 
 /* Grid & Cards */
