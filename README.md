@@ -57,13 +57,14 @@
 ##  4. Hình ảnh Demo Giao diện (Screenshots)
 
 ###  4.1. Giao diện Trang chủ & Tra cứu Bác sĩ theo Chuyên khoa
-*(Kéo thả file ảnh Trang chủ của bạn vào dòng bên dưới)*
+<img width="3026" height="1644" alt="image" src="https://github.com/user-attachments/assets/e60ca707-9018-4120-a755-b400b1ea358a" />
 
 
 ---
 
 ###  4.2. Giao diện Form Đăng ký Đặt lịch Khám bệnh Trực tuyến
-*(Kéo thả file ảnh Form đặt lịch khám của bạn vào dòng bên dưới)*
+<img width="1074" height="1334" alt="image" src="https://github.com/user-attachments/assets/259580ff-3a29-4df9-8d3f-d87fe74da7d4" />
+
 
 
 ---
