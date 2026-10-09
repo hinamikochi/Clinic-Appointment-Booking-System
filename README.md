@@ -70,53 +70,92 @@
 
 ---
 
-##  5. Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
+## 5. Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
 
-Yêu cầu môi trường: **Docker Engine 20.10+** và **Docker Compose V2** (hoặc Node.js v18+ và MySQL 8.0 nếu chạy cục bộ).
+**Yêu cầu môi trường:** Docker Engine 20.10+ và Docker Compose V2 (khuyến nghị). Nếu chạy cục bộ, cần Node.js v18+ và MySQL 8.0.
 
-###  Phương thức 1: Triển khai tự động bằng Docker Compose (Khuyên dùng)
+### 5.1. Phương thức 1: Triển khai bằng Docker Compose (Khuyên dùng)
 
-1. **Clone dự án về máy:**
-   ```bash
-   git clone https://github.com/hinamikochi/Clinic_Booking_Project.git
-   cd Clinic_Booking_Project
-Khởi chạy hệ thống bằng Docker Compose:
+**Bước 1: Clone dự án về máy**
 
-bash
+```bash
+git clone https://github.com/hinamikochi/Clinic_Booking_Project.git
+cd Clinic_Booking_Project
+```
+
+**Bước 2: Khởi chạy hệ thống**
+
+```bash
 docker compose up -d --build
+```
 
-Truy cập hệ thống:
+Lệnh trên sẽ xây dựng các image cần thiết và khởi chạy các dịch vụ theo cấu hình Docker Compose.
 
-Frontend (Nginx Web Server): http://localhost:8080
-Backend API: http://localhost:5001
-Database MySQL: Port 3306
- Phương thức 2: Chạy trong Môi trường Phát triển Cục bộ (Local Development)
-1. Cấu hình Cơ sở dữ liệu (MySQL):
-Tạo database clinic_db trên MySQL local.
-Import cấu trúc và dữ liệu mẫu từ tệp clinic_db_clean.sql.
-2. Khởi chạy Backend:
-bash
+**Bước 3: Truy cập hệ thống**
+
+| Thành phần                  | Địa chỉ / Cổng        |
+| :-------------------------- | :-------------------- |
+| Frontend (Nginx Web Server) | http://localhost:8080 |
+| Backend API                 | http://localhost:5001 |
+| MySQL Database              | `localhost:3306`      |
+
+### 5.2. Phương thức 2: Chạy trong môi trường phát triển cục bộ (Local Development)
+
+**Bước 1: Cấu hình cơ sở dữ liệu MySQL**
+
+* Tạo cơ sở dữ liệu `clinic_db` trên MySQL local.
+* Import cấu trúc và dữ liệu mẫu từ tệp `clinic_db_clean.sql`.
+* Kiểm tra cấu hình kết nối cơ sở dữ liệu trong tệp môi trường của Backend.
+
+**Bước 2: Khởi chạy Backend**
+
+Mở terminal tại thư mục gốc của dự án và thực hiện:
+
+```bash
 cd backend
 npm install
 npm start
-# Máy chủ Express chạy tại http://localhost:5001
-3. Khởi chạy Frontend:
-bash
+```
+
+Backend Express.js sẽ chạy tại `http://localhost:5001` nếu cấu hình cổng mặc định được giữ nguyên.
+
+**Bước 3: Khởi chạy Frontend**
+
+Mở một terminal khác tại thư mục gốc của dự án và thực hiện:
+
+```bash
 cd frontend
 npm install
 npm run dev
-# Máy chủ Vite ReactJS chạy tại http://localhost:5173
- 6. Biến Môi trường (Environment Variables)
+```
 
-Tệp cấu hình biến môi trường chính cho Frontend (frontend/.env):
+Frontend ReactJS sẽ chạy tại `http://localhost:5173` theo cấu hình Vite mặc định.
 
-env
+---
+
+## 6. Biến Môi trường (Environment Variables)
+
+Tệp cấu hình biến môi trường cho Frontend: `frontend/.env`.
+
+```env
 VITE_API_URL=http://localhost:5001
- 7. Danh sách RESTful API Chính (API Reference)
-Phương thức	Endpoint	Mô tả	Quyền truy cập
-POST	/api/auth/login	Đăng nhập hệ thống & lấy JWT Token	Public
-GET	/api/specialties	Lấy danh sách chuyên khoa & bác sĩ	Public
-POST	/api/appointments	Tạo phiếu đặt lịch khám mới	Public / Patient
-GET	/api/patient/appointments/:userId	Lấy danh sách lịch hẹn của bệnh nhân	Patient
-POST	/api/medical-records	Lưu chẩn đoán, đơn thuốc & đổi trạng thái ca khám	Doctor / Admin
-PUT	/api/admin/appointments/:id/status	Phê duyệt hoặc hủy lịch hẹn khám	Admin
+```
+
+**Lưu ý:** Giá trị `VITE_API_URL` phải phù hợp với cấu hình API của Backend và cách triển khai hệ thống. Khi chạy bằng Docker, hãy kiểm tra cấu hình Nginx và biến môi trường tương ứng để bảo đảm Frontend có thể gửi yêu cầu đến Backend.
+
+---
+
+## 7. Danh sách RESTful API Chính (API Reference)
+
+Bảng dưới đây liệt kê một số API tiêu biểu của hệ thống.
+
+| Phương thức | Endpoint                             | Mô tả                                                   | Quyền truy cập   |
+| :---------- | :----------------------------------- | :------------------------------------------------------ | :--------------- |
+| `POST`      | `/api/auth/login`                    | Đăng nhập hệ thống và nhận JWT Token                    | Public           |
+| `GET`       | `/api/specialties`                   | Lấy danh sách chuyên khoa và thông tin bác sĩ           | Public           |
+| `POST`      | `/api/appointments`                  | Tạo phiếu đặt lịch khám mới                             | Public / Patient |
+| `GET`       | `/api/patient/appointments/:userId`  | Lấy danh sách lịch hẹn của bệnh nhân                    | Patient          |
+| `POST`      | `/api/medical-records`               | Lưu chẩn đoán, đơn thuốc và cập nhật trạng thái ca khám | Doctor / Admin   |
+| `PUT`       | `/api/admin/appointments/:id/status` | Phê duyệt hoặc hủy lịch hẹn khám                        | Admin            |
+
+
