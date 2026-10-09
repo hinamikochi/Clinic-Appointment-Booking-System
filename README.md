@@ -20,7 +20,7 @@
 
 ---
 
-## ✨ 2. Các Chức năng Nổi bật (Key Features)
+##  2. Các Chức năng Nổi bật (Key Features)
 
 ###  Phân hệ Bệnh nhân (Patient)
 - **Tra cứu thông tin:** Tìm kiếm chuyên khoa, thông tin bác sĩ, học vị, phòng khám và mức giá niêm yết.
