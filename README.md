@@ -1,4 +1,4 @@
-# 🏥 Clinic Booking System - Hệ Thống Đặt Lịch Khám Bệnh Trực Tuyến
+#  Clinic Booking System - Hệ Thống Đặt Lịch Khám Bệnh Trực Tuyến
 
 ![ReactJS](https://img.shields.io/badge/Frontend-ReactJS_18-61DAFB?style=for-the-badge&logo=react)
 ![NodeJS](https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=node.js)
@@ -10,7 +10,7 @@
 
 ---
 
-## 📌 1. Giới thiệu Tổng quan (Overview)
+##  1. Giới thiệu Tổng quan (Overview)
 
 **Clinic Booking System** là hệ thống ứng dụng web fullstack hỗ trợ số hóa toàn bộ quy trình **đăng ký, điều phối và quản lý khám chữa bệnh trực tuyến** tại các phòng khám y tế. Hệ thống giải quyết tình trạng xếp hàng chờ đợi thủ công, tối ưu hóa thời gian đặt hẹn và minh bạch hóa thông tin đơn thuốc, hồ sơ bệnh án cho 3 nhóm người dùng chính: **Bệnh nhân**, **Bác sĩ** và **Quản trị viên (Admin)**.
 
@@ -22,27 +22,27 @@
 
 ## ✨ 2. Các Chức năng Nổi bật (Key Features)
 
-### 🟢 Phân hệ Bệnh nhân (Patient)
+###  Phân hệ Bệnh nhân (Patient)
 - **Tra cứu thông tin:** Tìm kiếm chuyên khoa, thông tin bác sĩ, học vị, phòng khám và mức giá niêm yết.
 - **Đăng ký đặt lịch khám:** Lựa chọn chuyên khoa, bác sĩ, ngày khám và các khung giờ còn trống (`time_slot`), đồng thời nhập mô tả triệu chứng.
 - **Quản lý phiếu hẹn:** Theo dõi danh sách phiếu đặt lịch theo thời gian thực (Trạng thái: *Chờ duyệt, Đã xác nhận, Hoàn thành, Đã hủy*).
 - **Hồ sơ bệnh án điện tử:** Xem lại kết quả chẩn đoán, đơn thuốc chi tiết và **in phiếu kết quả khám ra file PDF**.
 - **Quản lý tài khoản:** Cập nhật thông tin cá nhân và đổi mật khẩu tài khoản.
 
-### 🔵 Phân hệ Bác sĩ (Doctor)
+###  Phân hệ Bác sĩ (Doctor)
 - **Lịch khám phân công:** Theo dõi danh sách bệnh nhân đặt lịch khám theo ngày.
 - **Xử lý ca khám:** Tiếp nhận ca khám, cập nhật thông tin chẩn đoán lâm sàng.
 - **Kê đơn thuốc điện tử:** Nhập chi tiết tên thuốc, liều lượng, hướng dẫn sử dụng và hẹn ngày tái khám.
 - **Đồng bộ hồ sơ:** Lưu trữ tự động kết quả khám vào bảng `medicalrecords` thông qua Database Transaction.
 
-### 🟣 Phân hệ Quản trị viên (Admin)
+###  Phân hệ Quản trị viên (Admin)
 - **Dashboard Thống kê:** Báo cáo trực quan tổng số lượt khám, tỷ lệ ca khám thành công và phân bổ lịch hẹn theo chuyên khoa.
 - **Phê duyệt lịch hẹn:** Kiểm tra và thực hiện phê duyệt hoặc hủy các yêu cầu đặt lịch từ bệnh nhân.
 - **Quản lý danh mục:** Thêm, sửa, xóa danh mục chuyên khoa và thông tin tài khoản bác sĩ (giá khám, số phòng, học vị).
 
 ---
 
-## 🛠️ 3. Công nghệ & Kiến trúc (Tech Stack & Architecture)
+##  3. Công nghệ & Kiến trúc (Tech Stack & Architecture)
 
 | Thành phần | Công nghệ / Thư viện sử dụng |
 | :--- | :--- |
@@ -54,25 +54,25 @@
 
 ---
 
-## 📸 4. Hình ảnh Demo Giao diện (Screenshots)
+##  4. Hình ảnh Demo Giao diện (Screenshots)
 
-### 🌐 4.1. Giao diện Trang chủ & Tra cứu Bác sĩ theo Chuyên khoa
+###  4.1. Giao diện Trang chủ & Tra cứu Bác sĩ theo Chuyên khoa
 *(Kéo thả file ảnh Trang chủ của bạn vào dòng bên dưới)*
 
 
 ---
 
-### 📋 4.2. Giao diện Form Đăng ký Đặt lịch Khám bệnh Trực tuyến
+###  4.2. Giao diện Form Đăng ký Đặt lịch Khám bệnh Trực tuyến
 *(Kéo thả file ảnh Form đặt lịch khám của bạn vào dòng bên dưới)*
 
 
 ---
 
-## 🚀 5. Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
+##  5. Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
 
 Yêu cầu môi trường: **Docker Engine 20.10+** và **Docker Compose V2** (hoặc Node.js v18+ và MySQL 8.0 nếu chạy cục bộ).
 
-### 🐳 Phương thức 1: Triển khai tự động bằng Docker Compose (Khuyên dùng)
+###  Phương thức 1: Triển khai tự động bằng Docker Compose (Khuyên dùng)
 
 1. **Clone dự án về máy:**
    ```bash
