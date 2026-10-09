@@ -12,11 +12,10 @@
 
 ##  1. Giới thiệu Tổng quan (Overview)
 
-**Clinic Booking System** là hệ thống ứng dụng web fullstack hỗ trợ số hóa toàn bộ quy trình **đăng ký, điều phối và quản lý khám chữa bệnh trực tuyến** tại các phòng khám y tế. Hệ thống giải quyết tình trạng xếp hàng chờ đợi thủ công, tối ưu hóa thời gian đặt hẹn và minh bạch hóa thông tin đơn thuốc, hồ sơ bệnh án cho 3 nhóm người dùng chính: **Bệnh nhân**, **Bác sĩ** và **Quản trị viên (Admin)**.
+**Clinic Booking System** là hệ thống ứng dụng hỗ trợ số hóa toàn bộ quy trình **đăng ký, điều phối và quản lý khám chữa bệnh trực tuyến** tại các phòng khám y tế. Hệ thống giải quyết tình trạng xếp hàng chờ đợi thủ công, tối ưu hóa thời gian đặt hẹn và minh bạch hóa thông tin đơn thuốc, hồ sơ bệnh án cho 3 nhóm người dùng chính: **Bệnh nhân**, **Bác sĩ** và **Quản trị viên (Admin)**.
 
 Đề tài thuộc Báo cáo Thực tập Chuyên ngành Công nghệ Thông tin – **Trường Đại học Công nghệ (VNU-UET)**.
 - **Sinh viên thực hiện:** Vũ Văn Hiếu (MSV: 23020605 - Lớp K68I-CN)
-- **Giảng viên hướng dẫn:** Cô Trần Ngọc Trúc Linh
 
 ---
 
