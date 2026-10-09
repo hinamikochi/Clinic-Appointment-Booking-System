@@ -80,3 +80,43 @@ Yêu cầu môi trường: **Docker Engine 20.10+** và **Docker Compose V2** (h
    ```bash
    git clone https://github.com/hinamikochi/Clinic_Booking_Project.git
    cd Clinic_Booking_Project
+Khởi chạy hệ thống bằng Docker Compose:
+
+bash
+docker compose up -d --build
+
+Truy cập hệ thống:
+
+Frontend (Nginx Web Server): http://localhost:8080
+Backend API: http://localhost:5001
+Database MySQL: Port 3306
+ Phương thức 2: Chạy trong Môi trường Phát triển Cục bộ (Local Development)
+1. Cấu hình Cơ sở dữ liệu (MySQL):
+Tạo database clinic_db trên MySQL local.
+Import cấu trúc và dữ liệu mẫu từ tệp clinic_db_clean.sql.
+2. Khởi chạy Backend:
+bash
+cd backend
+npm install
+npm start
+# Máy chủ Express chạy tại http://localhost:5001
+3. Khởi chạy Frontend:
+bash
+cd frontend
+npm install
+npm run dev
+# Máy chủ Vite ReactJS chạy tại http://localhost:5173
+ 6. Biến Môi trường (Environment Variables)
+
+Tệp cấu hình biến môi trường chính cho Frontend (frontend/.env):
+
+env
+VITE_API_URL=http://localhost:5001
+ 7. Danh sách RESTful API Chính (API Reference)
+Phương thức	Endpoint	Mô tả	Quyền truy cập
+POST	/api/auth/login	Đăng nhập hệ thống & lấy JWT Token	Public
+GET	/api/specialties	Lấy danh sách chuyên khoa & bác sĩ	Public
+POST	/api/appointments	Tạo phiếu đặt lịch khám mới	Public / Patient
+GET	/api/patient/appointments/:userId	Lấy danh sách lịch hẹn của bệnh nhân	Patient
+POST	/api/medical-records	Lưu chẩn đoán, đơn thuốc & đổi trạng thái ca khám	Doctor / Admin
+PUT	/api/admin/appointments/:id/status	Phê duyệt hoặc hủy lịch hẹn khám	Admin
