@@ -63,7 +63,9 @@
 ---
 
 ###  4.2. Giao diện Form Đăng ký Đặt lịch Khám bệnh Trực tuyến
-<img width="1074" height="1334" alt="image" src="https://github.com/user-attachments/assets/259580ff-3a29-4df9-8d3f-d87fe74da7d4" />
+<p align="center">
+  <img width="600" alt="Giao diện đặt lịch khám bệnh trực tuyến" src="https://github.com/user-attachments/assets/259580ff-3a29-4df9-8d3f-d87fe74da7d4" />
+</p>
 
 
 
