@@ -10,7 +10,7 @@
 
 ---
 
-##  1. Giới thiệu Tổng quan (Overview)
+##  1. Giới thiệu tổng quan
 
 **Clinic Booking System** là hệ thống ứng dụng hỗ trợ số hóa toàn bộ quy trình **đăng ký, điều phối và quản lý khám chữa bệnh trực tuyến** tại các phòng khám y tế. Hệ thống giải quyết tình trạng xếp hàng chờ đợi thủ công, tối ưu hóa thời gian đặt hẹn và minh bạch hóa thông tin đơn thuốc, hồ sơ bệnh án cho 3 nhóm người dùng chính: **Bệnh nhân**, **Bác sĩ** và **Quản trị viên (Admin)**.
 
@@ -19,29 +19,29 @@
 
 ---
 
-##  2. Các Chức năng Nổi bật (Key Features)
+##  2. Các chức năng nổi bật
 
-###  Phân hệ Bệnh nhân (Patient)
+###  Bệnh nhân 
 - **Tra cứu thông tin:** Tìm kiếm chuyên khoa, thông tin bác sĩ, học vị, phòng khám và mức giá niêm yết.
 - **Đăng ký đặt lịch khám:** Lựa chọn chuyên khoa, bác sĩ, ngày khám và các khung giờ còn trống (`time_slot`), đồng thời nhập mô tả triệu chứng.
 - **Quản lý phiếu hẹn:** Theo dõi danh sách phiếu đặt lịch theo thời gian thực (Trạng thái: *Chờ duyệt, Đã xác nhận, Hoàn thành, Đã hủy*).
 - **Hồ sơ bệnh án điện tử:** Xem lại kết quả chẩn đoán, đơn thuốc chi tiết và **in phiếu kết quả khám ra file PDF**.
 - **Quản lý tài khoản:** Cập nhật thông tin cá nhân và đổi mật khẩu tài khoản.
 
-###  Phân hệ Bác sĩ (Doctor)
+###  Bác sĩ 
 - **Lịch khám phân công:** Theo dõi danh sách bệnh nhân đặt lịch khám theo ngày.
 - **Xử lý ca khám:** Tiếp nhận ca khám, cập nhật thông tin chẩn đoán lâm sàng.
 - **Kê đơn thuốc điện tử:** Nhập chi tiết tên thuốc, liều lượng, hướng dẫn sử dụng và hẹn ngày tái khám.
 - **Đồng bộ hồ sơ:** Lưu trữ tự động kết quả khám vào bảng `medicalrecords` thông qua Database Transaction.
 
-###  Phân hệ Quản trị viên (Admin)
+###  Quản trị viên (Admin)
 - **Dashboard Thống kê:** Báo cáo trực quan tổng số lượt khám, tỷ lệ ca khám thành công và phân bổ lịch hẹn theo chuyên khoa.
 - **Phê duyệt lịch hẹn:** Kiểm tra và thực hiện phê duyệt hoặc hủy các yêu cầu đặt lịch từ bệnh nhân.
 - **Quản lý danh mục:** Thêm, sửa, xóa danh mục chuyên khoa và thông tin tài khoản bác sĩ (giá khám, số phòng, học vị).
 
 ---
 
-##  3. Công nghệ & Kiến trúc (Tech Stack & Architecture)
+##  3. Công nghệ & Kiến trúc 
 
 | Thành phần | Công nghệ / Thư viện sử dụng |
 | :--- | :--- |
@@ -53,7 +53,7 @@
 
 ---
 
-##  4. Hình ảnh Demo Giao diện (Screenshots)
+##  4. Hình ảnh Demo Giao diện 
 
 ###  4.1. Giao diện Trang chủ & Tra cứu Bác sĩ theo Chuyên khoa
 <img width="3026" height="1644" alt="image" src="https://github.com/user-attachments/assets/e60ca707-9018-4120-a755-b400b1ea358a" />
@@ -70,11 +70,11 @@
 
 ---
 
-## 5. Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
+## 5. Hướng dẫn Cài đặt & Khởi chạy 
 
-**Yêu cầu môi trường:** Docker Engine 20.10+ và Docker Compose V2 (khuyến nghị). Nếu chạy cục bộ, cần Node.js v18+ và MySQL 8.0.
+**Yêu cầu môi trường:** Docker Engine 20.10+ và Docker Compose V2. Nếu chạy cục bộ, cần Node.js v18+ và MySQL 8.0.
 
-### 5.1. Phương thức 1: Triển khai bằng Docker Compose (Khuyên dùng)
+### 5.1. Phương thức 1: Triển khai bằng Docker Compose 
 
 **Bước 1: Clone dự án về máy**
 
@@ -99,7 +99,7 @@ Lệnh trên sẽ xây dựng các image cần thiết và khởi chạy các d�
 | Backend API                 | http://localhost:5001 |
 | MySQL Database              | `localhost:3306`      |
 
-### 5.2. Phương thức 2: Chạy trong môi trường phát triển cục bộ (Local Development)
+### 5.2. Phương thức 2: Chạy trong môi trường phát triển cục bộ 
 
 **Bước 1: Cấu hình cơ sở dữ liệu MySQL**
 
@@ -133,7 +133,7 @@ Frontend ReactJS sẽ chạy tại `http://localhost:5173` theo cấu hình Vite
 
 ---
 
-## 6. Biến Môi trường (Environment Variables)
+## 6. Biến Môi trường
 
 Tệp cấu hình biến môi trường cho Frontend: `frontend/.env`.
 
@@ -145,7 +145,7 @@ VITE_API_URL=http://localhost:5001
 
 ---
 
-## 7. Danh sách RESTful API Chính (API Reference)
+## 7. Danh sách RESTful API Chính
 
 Bảng dưới đây liệt kê một số API tiêu biểu của hệ thống.
 
