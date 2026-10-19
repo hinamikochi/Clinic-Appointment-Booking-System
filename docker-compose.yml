@@ -4,8 +4,10 @@ services:
     container_name: clinic_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: clinic_db
+      MYSQL_USER: ${DB_USER:-clinic_app}
+      MYSQL_PASSWORD: ${DB_PASS:?Set DB_PASS in .env}
     ports:
       - "3307:3306"
     volumes:
@@ -26,10 +28,11 @@ services:
     environment:
       - PORT=5001
       - DB_HOST=db
-      - DB_USER=root
-      - DB_PASS=root
+      - DB_USER=${DB_USER:-clinic_app}
+      - DB_PASS=${DB_PASS:?Set DB_PASS in .env}
       - DB_NAME=clinic_db
-      - JWT_SECRET=secret_key
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env}
+      - NODE_ENV=production
     depends_on:
       db:
         condition: service_healthy
