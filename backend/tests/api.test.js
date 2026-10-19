@@ -30,7 +30,7 @@ integration('Test các chức năng cơ bản', () => {
         createdSpecialtyIds.push(testSpecialty.id);
 
         const salt = await bcrypt.genSalt(10);
-        
+
         // 2. Tạo Admin User & Token
         const hashedAdminPass = await bcrypt.hash('admin123', salt);
         testAdminUser = await User.create({
@@ -71,10 +71,13 @@ integration('Test các chức năng cơ bản', () => {
     });
 
     afterAll(async () => {
-        // Clear dữ liệu test 
+        // Clear dữ liệu test
         try {
             const Record = require('../models/MedicalRecord');
             const Audit = require('../models/MedicalRecordAudit');
+            const ops = require('../models/Operations');
+            await ops.Notification.destroy({ where: { appointmentId: createdAppointmentIds } });
+            await ops.AppointmentEvent.destroy({ where: { appointmentId: createdAppointmentIds } });
             const records = await Record.findAll({ where: { appointmentId: createdAppointmentIds } });
             if (records.length) await Audit.destroy({ where: { medicalRecordId: records.map(record => record.id) } });
             await Record.destroy({ where: { appointmentId: createdAppointmentIds } });
@@ -97,7 +100,7 @@ integration('Test các chức năng cơ bản', () => {
         }
     });
 
-    // 1. Đăng nhập sai mật khẩu 
+    // 1. Đăng nhập sai mật khẩu
     test('1. POST /api/login - Đăng nhập sai mật khẩu', async () => {
         const res = await request(app)
             .post('/api/login')
@@ -110,7 +113,7 @@ integration('Test các chức năng cơ bản', () => {
         expect(res.body).toHaveProperty('message', 'Email hoặc mật khẩu không đúng!');
     });
 
-    // 2. Đăng nhập thành công 
+    // 2. Đăng nhập thành công
     test('2. POST /api/login - Đăng nhập thành công', async () => {
         const res = await request(app)
             .post('/api/login')
@@ -124,7 +127,7 @@ integration('Test các chức năng cơ bản', () => {
         expect(res.body.user).toHaveProperty('email', testAdminUser.email);
     });
 
-    // 3. Gọi API yêu cầu xác thực nhưng không có JWT 
+    // 3. Gọi API yêu cầu xác thực nhưng không có JWT
     test('3. POST /api/specialties - Không gửi Token', async () => {
         const res = await request(app)
             .post('/api/specialties')
@@ -145,7 +148,7 @@ integration('Test các chức năng cơ bản', () => {
         expect(res.body).toHaveProperty('message', 'Bạn không có quyền thực hiện thao tác này!');
     });
 
-    // 5. Lấy danh sách chuyên khoa 
+    // 5. Lấy danh sách chuyên khoa
     test('5. GET /api/specialties - Lấy danh sách chuyên khoa', async () => {
         const res = await request(app).get('/api/specialties');
 
@@ -154,7 +157,7 @@ integration('Test các chức năng cơ bản', () => {
         expect(res.body.length).toBeGreaterThan(0);
     });
 
-    // 6. Đặt lịch khám với dữ liệu hợp lệ 
+    // 6. Đặt lịch khám với dữ liệu hợp lệ
     const testBookingDate = '2099-01-05';
     const testTimeSlot = '09:00 - 09:30';
 
@@ -199,7 +202,7 @@ integration('Test các chức năng cơ bản', () => {
         expect(res.statusCode).toBe(409);
     });
 
-    // 8. Gọi API Dashboard Admin -> kiểm tra trả về dữ liệu thống kê hợp lệ 
+    // 8. Gọi API Dashboard Admin -> kiểm tra trả về dữ liệu thống kê hợp lệ
     test('8. GET /api/admin/dashboard-stats - Trả về thống kê CSDL hợp lệ', async () => {
         const res = await request(app).get('/api/admin/dashboard-stats').set('Authorization', `Bearer ${adminToken}`);
 
@@ -259,7 +262,7 @@ integration('Test các chức năng cơ bản', () => {
     });
 
     test('13. Schedule edits cannot invalidate existing future appointments', async () => {
-        const response = await request(app).put(`/api/doctors/${testDoctorInfo.id}/schedule`).set('Authorization', `Bearer ${adminToken}`).send({ weekdays: [1, 2, 3, 4, 5, 6], timeSlots: [testTimeSlot], daysOff: [testBookingDate] });
+        const response = await request(app).put(`/api/doctors/${testDoctorInfo.id}/schedule`).set('Authorization', `Bearer ${adminToken}`).send({ version: 1, weekdays: [1, 2, 3, 4, 5, 6], timeSlots: [testTimeSlot], daysOff: [testBookingDate] });
         expect(response.status).toBe(400);
         expect((await DoctorInfo.findByPk(testDoctorInfo.id)).workSchedule).toBe(null);
     });

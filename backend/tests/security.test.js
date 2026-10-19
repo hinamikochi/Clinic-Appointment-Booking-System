@@ -15,7 +15,17 @@ const patient = { id: 7, role: 'patient' };
 const doctorUser = { id: 8, role: 'doctor' };
 const token = user => jwt.sign(user, jwtSecret);
 const booking = { patient_name: 'Nguyễn An', patient_phone: '0912345678', doctorId: 2, specialtyId: 1, appointment_date: '2099-01-05', time_slot: '09:00 - 09:30', patient_age: 30 };
-beforeEach(() => jest.restoreAllMocks());
+beforeEach(() => {
+    jest.restoreAllMocks();
+    const ops = require('../models/Operations');
+    jest.spyOn(User, 'findByPk').mockResolvedValue({ id: 8, role: 'doctor', isActive: true });
+    jest.spyOn(User, 'findAll').mockResolvedValue([]);
+    jest.spyOn(DoctorInfo, 'findByPk').mockResolvedValue(null);
+    jest.spyOn(Appointment, 'findAll').mockResolvedValue([]);
+    jest.spyOn(ops.AppointmentEvent, 'create').mockResolvedValue({});
+    jest.spyOn(ops.RecordDraft, 'destroy').mockResolvedValue(0);
+    jest.spyOn(ops.Notification, 'findOrCreate').mockResolvedValue([{}, true]);
+});
 afterAll(() => sequelize.close());
 
 test.each(['/api/users/7', '/api/appointments', '/api/patient/appointments/7', '/api/doctor/appointments/2', '/api/admin/dashboard-stats'])('private API requires authentication: %s', async path => {
