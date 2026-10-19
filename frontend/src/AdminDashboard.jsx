@@ -1,3 +1,6 @@
+import AccountsManager from './components/AccountsManager';
+import ReportsView from './components/ReportsView';
+import useUrlState from './hooks/useUrlState';
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import Sidebar from './components/Sidebar';
@@ -8,17 +11,17 @@ import DoctorManager from './DoctorManager';
 import AppointmentsView from './components/AppointmentsView';
 import ProfileView from './components/ProfileView';
 import BookingModal from './BookingModal';
-import { FileText, Pill, Calendar, X, Printer } from 'lucide-react';
+import { FileText, Pill, X, Printer } from 'lucide-react';
 import { printPrescription } from './utils/printHelper';
 import './AdminDashboard.css';
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useUrlState('tab', 'overview');
   const [specCount, setSpecCount] = useState(0);
   const [docCount, setDocCount] = useState(0);
 
   // State Từ khóa Tìm kiếm được chọn
-  const [initialSearchQuery, setInitialSearchQuery] = useState('');
+  const [initialSearchQuery, setInitialSearchQuery] = useState(undefined);
 
   // State Modal Đặt Lịch Hẹn Mới
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -32,7 +35,7 @@ function AdminDashboard() {
       const resSpec = await api.get('/specialties');
       setSpecCount(resSpec.data.length);
 
-      const resDoc = await api.get('/doctors');
+      const resDoc = await api.get('/admin/doctors');
       setDocCount(resDoc.data.length);
     } catch (err) {
       console.error('Lỗi cập nhật thống kê:', err);
@@ -54,18 +57,20 @@ function AdminDashboard() {
     }
   };
 
-  
+
   return (
     <div className="admin-layout">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="admin-main-content">
-        <Header 
-          title={activeTab} 
+        <Header
+          title={activeTab}
           onOpenBooking={() => setShowBookingModal(true)}
           setActiveTab={setActiveTab}
           onSelectSearchItem={handleSelectSearchItem}
         />
         <div className="admin-body">
+          {activeTab === 'accounts' && <AccountsManager />}
+          {activeTab === 'reports' && <ReportsView />}
           {activeTab === 'overview' && (
             <OverviewView docCount={docCount} specCount={specCount} setActiveTab={setActiveTab} />
           )}
@@ -86,7 +91,7 @@ function AdminDashboard() {
 
       {/* MODAL TẠO LỊCH HẸN TRỰC TIẾP CHO ADMIN */}
       {showBookingModal && (
-        <BookingModal 
+        <BookingModal
           onClose={() => setShowBookingModal(false)}
           onSuccess={fetchCounts}
         />
@@ -108,7 +113,7 @@ function AdminDashboard() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'serif' }}>
+                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-ui)' }}>
                    KẾT QUẢ KHÁM BỆNH BỆNH NHÂN
                 </div>
                 <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
@@ -171,10 +176,10 @@ function AdminDashboard() {
             </div>
 
             <div style={{ backgroundColor: '#fdfbf7', padding: '14px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button 
+              <button
                 onClick={() => printPrescription(selectedAppointmentRecord, selectedAppointmentRecord?.MedicalRecord)}
                 className="btn-primary-natural"
-                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}  
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 <Printer size={16} />  In Kết Quả Khám
               </button>

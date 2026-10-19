@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import { toast } from 'react-hot-toast';
-import { 
-  Building2, 
-  Search, 
-  Plus, 
-  Users, 
-  Banknote, 
-  Edit, 
-  Trash2, 
-  XCircle 
+import {
+  Building2,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  XCircle
 } from 'lucide-react';
 
-function SpecialtyManager({ onUpdate }) {
+function SpecialtyManager({ onUpdate, initialSearchQuery }) {
   const [specialties, setSpecialties] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+  useEffect(() => { setSearchQuery(initialSearchQuery || ''); }, [initialSearchQuery]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -52,7 +51,7 @@ function SpecialtyManager({ onUpdate }) {
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {
-      toast.error('Lỗi tạo chuyên khoa');
+      toast.error(err.response?.data?.message || 'Lỗi tạo chuyên khoa');
     }
   };
 
@@ -87,11 +86,11 @@ function SpecialtyManager({ onUpdate }) {
       fetchSpecialties();
       if (onUpdate) onUpdate();
     } catch (err) {
-      toast.error('Không thể xóa chuyên khoa này');
+      toast.error(err.response?.data?.message || 'Không thể xóa chuyên khoa này');
     }
   };
 
-  const filteredSpecialties = specialties.filter((sp) => 
+  const filteredSpecialties = specialties.filter((sp) =>
     sp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sp.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -104,7 +103,7 @@ function SpecialtyManager({ onUpdate }) {
           <h2 className="section-title-garamond" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Building2 size={24} color="#5a5a40" /> Danh Sách Chuyên Khoa & Tổng Quan
           </h2>
-          <p style={{ fontSize: '13px', color: '#8a8a70', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#62624d', margin: '4px 0 0 0' }}>
             Quản lý danh mục chuyên khoa, vị trí tầng và thống kê nhân sự bác sĩ
           </p>
         </div>
@@ -118,9 +117,9 @@ function SpecialtyManager({ onUpdate }) {
       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df' }}>
         <div className="header-search" style={{ width: '100%' }}>
           <Search size={16} color="#8a8a70" />
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm chuyên khoa theo tên hoặc mô tả..." 
+          <input
+            type="text"
+            placeholder="Tìm kiếm chuyên khoa theo tên hoặc mô tả..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -133,7 +132,7 @@ function SpecialtyManager({ onUpdate }) {
           const docCount = sp.DoctorInfos?.length || 0;
           const floor = sp.id;
           const floorText = `Tầng ${floor}`;
-          
+
           const fees = (sp.DoctorInfos || []).map(d => Number(d.consultationFee)).filter(f => !isNaN(f) && f > 0);
           let feeDisplay = '';
           if (fees.length > 0) {
@@ -170,20 +169,20 @@ function SpecialtyManager({ onUpdate }) {
                   </span>
                 </div>
 
-                <p style={{ fontSize: '13px', color: '#8a8a70', marginTop: '12px', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '13px', color: '#62624d', marginTop: '12px', lineHeight: '1.5' }}>
                   {sp.description || 'Chuyên khám và điều trị các bệnh lý lâm sàng chất lượng cao.'}
                 </p>
 
                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#5a5a40' }}>
-                    <span style={{ color: '#8a8a70', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#62624d', display: 'flex', alignItems: 'center', gap: '4px' }}>
                        Vị trí:
                     </span>
                     <span style={{ fontWeight: '600', color: '#2d2d2a' }}>{floorText}</span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#5a5a40' }}>
-                    <span style={{ color: '#8a8a70', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#62624d', display: 'flex', alignItems: 'center', gap: '4px' }}>
                        Số lượng bác sĩ:
                     </span>
                     <span style={{ fontWeight: '700', color: '#2e6f40' }}>
@@ -192,7 +191,7 @@ function SpecialtyManager({ onUpdate }) {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#5a5a40' }}>
-                    <span style={{ color: '#8a8a70', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#62624d', display: 'flex', alignItems: 'center', gap: '4px' }}>
                        Giá khám tham khảo:
                     </span>
                     <span style={{ fontWeight: '700', color: '#5a5a40' }}>
@@ -203,13 +202,13 @@ function SpecialtyManager({ onUpdate }) {
               </div>
 
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
-                <button 
+                <button
                   onClick={() => openEditModal(sp)}
                   style={{ background: 'none', border: 'none', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
                 >
                   <Edit size={14} /> Chỉnh sửa
                 </button>
-                <button 
+                <button
                   onClick={() => handleDeleteSpecialty(sp.id)}
                   style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
                 >
@@ -232,8 +231,8 @@ function SpecialtyManager({ onUpdate }) {
 
             <form onSubmit={handleCreateSpecialty} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Tên Chuyên Khoa *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="specialtymanager-field-1">Tên Chuyên Khoa *</label>
+                <input id="specialtymanager-field-1"
                   type="text" required placeholder="Ví dụ: Khoa Tim Mạch"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -242,8 +241,8 @@ function SpecialtyManager({ onUpdate }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn</label>
-                <textarea 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="specialtymanager-field-2">Mô tả ngắn</label>
+                <textarea id="specialtymanager-field-2"
                   rows={3} placeholder="Mô tả chức năng khám bệnh..."
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -271,8 +270,8 @@ function SpecialtyManager({ onUpdate }) {
 
             <form onSubmit={handleUpdateSpecialty} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Tên Chuyên Khoa *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="specialtymanager-field-3">Tên Chuyên Khoa *</label>
+                <input id="specialtymanager-field-3"
                   type="text" required placeholder="Ví dụ: Khoa Tim Mạch"
                   value={editFormData.name}
                   onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
@@ -281,8 +280,8 @@ function SpecialtyManager({ onUpdate }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn</label>
-                <textarea 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="specialtymanager-field-4">Mô tả ngắn</label>
+                <textarea id="specialtymanager-field-4"
                   rows={3} placeholder="Mô tả chức năng khám bệnh..."
                   value={editFormData.description}
                   onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}

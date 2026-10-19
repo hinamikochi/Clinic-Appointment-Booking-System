@@ -1,7 +1,8 @@
+import EmailAccount from './EmailAccount';
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { toast } from 'react-hot-toast';
-import { User, KeyRound, Save, Award, Image } from 'lucide-react';
+import { User, KeyRound, Save} from 'lucide-react';
 
 export function ProfileView({ onUpdate }) {
   const userStr = localStorage.getItem('user');
@@ -92,6 +93,7 @@ export function ProfileView({ onUpdate }) {
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.assign('/login');
     } catch (err) {
       toast.error(err.response?.data?.message || "Lỗi khi đổi mật khẩu");
     } finally {
@@ -103,28 +105,29 @@ export function ProfileView({ onUpdate }) {
 
   return (
     <div className="clinic-profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-      
+
+      <div style={{ gridColumn: '1 / -1' }}><EmailAccount /></div>
       {/* CẬP NHẬT THÔNG TIN CÁ NHÂN */}
       <div className="natural-section-card">
         <h3 className="section-title-garamond" style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <User size={20} color="#5a5a40" /> Thông Tin Cá Nhân
         </h3>
-        <p style={{ fontSize: '12px', color: '#8a8a70', marginBottom: '20px' }}>
+        <p style={{ fontSize: '12px', color: '#62624d', marginBottom: '20px' }}>
           Cập nhật họ tên, số điện thoại, địa chỉ {isDoctor && '& học vị chuyên môn bác sĩ'}.
         </p>
 
         <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Họ và tên *</label>
-            <input 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-1">Họ và tên *</label>
+            <input id="profileview-field-1"
               type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#8a8a70' }}>Email đăng ký</label>
-            <input 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#62624d' }} htmlFor="profileview-field-2">Email đăng ký</label>
+            <input id="profileview-field-2"
               type="email" disabled value={userInfo.email || ''}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', backgroundColor: '#f5f5f0', cursor: 'not-allowed', fontSize: '13px' }}
             />
@@ -134,33 +137,33 @@ export function ProfileView({ onUpdate }) {
           {isDoctor && (
             <>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                   Học vị chuyên môn 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }} htmlFor="profileview-field-3">
+                   Học vị chuyên môn
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="Ví dụ: GS-TS, BSCKII, Master..." 
-                  value={degree} 
+                <input id="profileview-field-3"
+                  type="text"
+                  placeholder="Ví dụ: GS-TS, BSCKII, Master..."
+                  value={degree}
                   onChange={(e) => setDegree(e.target.value)}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', fontSize: '13px', backgroundColor: '#fdfbf7', fontWeight: '600' }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px' }} htmlFor="profileview-field-4">
                    Link Hình Ảnh Đại Diện (Avatar URL)
                 </label>
-                <input 
-                  type="text" 
-                  placeholder="https://..." 
-                  value={image} 
+                <input id="profileview-field-4"
+                  type="text"
+                  placeholder="https://..."
+                  value={image}
                   onChange={(e) => setImage(e.target.value)}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #dcdcb8', marginTop: '4px', outline: 'none', fontSize: '13px', backgroundColor: '#fdfbf7' }}
                 />
                 {image && (
                   <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={image} alt="Preview" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e6e6df' }} />
-                    <span style={{ fontSize: '11px', color: '#8a8a70' }}>Xem trước ảnh đại diện</span>
+                    <span style={{ fontSize: '11px', color: '#62624d' }}>Xem trước ảnh đại diện</span>
                   </div>
                 )}
               </div>
@@ -169,15 +172,15 @@ export function ProfileView({ onUpdate }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Số điện thoại</label>
-              <input 
+              <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-5">Số điện thoại</label>
+              <input id="profileview-field-5"
                 type="text" placeholder="0912 xxx xxx" value={phone} onChange={(e) => setPhone(e.target.value)}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Giới tính</label>
-              <select 
+              <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-6">Giới tính</label>
+              <select id="profileview-field-6"
                 value={gender} onChange={(e) => setGender(e.target.value)}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
               >
@@ -189,8 +192,8 @@ export function ProfileView({ onUpdate }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Địa chỉ thường trú</label>
-            <input 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-7">Địa chỉ thường trú</label>
+            <input id="profileview-field-7"
               type="text" placeholder="Quận/Huyện, Thành Phố..." value={address} onChange={(e) => setAddress(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
             />
@@ -207,30 +210,30 @@ export function ProfileView({ onUpdate }) {
         <h3 className="section-title-garamond" style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <KeyRound size={20} color="#5a5a40" /> Đổi Mật Khẩu Tài Khoản
         </h3>
-        <p style={{ fontSize: '12px', color: '#8a8a70', marginBottom: '20px' }}>
+        <p style={{ fontSize: '12px', color: '#62624d', marginBottom: '20px' }}>
           Đổi mật khẩu định kỳ để nâng cao tính bảo mật.
         </p>
 
         <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mật khẩu hiện tại *</label>
-            <input 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-8">Mật khẩu hiện tại *</label>
+            <input id="profileview-field-8"
               type="password" required placeholder="••••••••" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mật khẩu mới *</label>
-            <input 
-              type="password" required placeholder="Ít nhất 6 ký tự" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-9">Mật khẩu mới *</label>
+            <input id="profileview-field-9"
+              type="password" required placeholder="Ít nhất 8 ký tự" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Xác nhận mật khẩu mới *</label>
-            <input 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="profileview-field-10">Xác nhận mật khẩu mới *</label>
+            <input id="profileview-field-10"
               type="password" required placeholder="Nhập lại mật khẩu mới" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
             />

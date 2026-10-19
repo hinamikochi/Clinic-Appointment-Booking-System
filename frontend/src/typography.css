@@ -1,0 +1,72 @@
+/* Giữ Inter và thang chữ đang dùng trong các màn hình quản lý hiện có.
+   Inline style của các thành phần cũ (logo, số thống kê, tiêu đề lớn) được giữ ưu tiên. */
+:root {
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --text-caption: 12px;
+  --text-label: 12px;
+  --text-control: 13px;
+  --text-button: 13px;
+  --text-body: 14px;
+  --text-section: 17px;
+  --text-page: 24px;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-booking-dialog, .clinic-recovery, .clinic-typography) {
+  font-size: var(--text-body);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-booking-dialog, .clinic-recovery, .clinic-typography) :is(input, select, textarea) {
+  font-family: var(--font-ui);
+  font-size: var(--text-control) !important;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-booking-dialog, .clinic-recovery, .clinic-typography) label {
+  font-size: var(--text-label) !important;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-booking-dialog, .clinic-recovery, .clinic-typography) button {
+  font-family: var(--font-ui);
+  font-size: var(--text-button);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-recovery, .clinic-typography) :is(h1, h2) {
+  font-size: var(--text-page);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-recovery, .clinic-typography) :is(h3, h4) {
+  font-size: var(--text-section);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-recovery, .clinic-typography) small {
+  font-size: var(--text-caption);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+:is(.admin-layout, .clinic-modal, .clinic-recovery, .clinic-typography) :is(code, dt, dd, li) {
+  font-family: var(--font-ui);
+  font-size: inherit;
+  line-height: 1.5;
+}
+
+/* Tiêu đề trang không bị hạ cỡ khi component cũ dùng thẻ h3. */
+.admin-layout .section-title-garamond { font-size: var(--text-page); }
+/* Tiêu đề của hộp thoại và phần con khớp các form có sẵn. */
+.clinic-modal .clinic-modal-header h2 { font-size: 18px; }
+.clinic-modal .clinic-modal-header button { font-size: 26px; }
+.clinic-typography.clinic-subsection > :is(h2, h3) { font-size: 18px; }
+.clinic-recovery h1 { margin-top: 0; }
+.clinic-recovery > p { font-size: var(--text-label); }
+.clinic-input { font-size: var(--text-control); font-weight: 400; }

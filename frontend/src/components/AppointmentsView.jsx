@@ -1,3 +1,6 @@
+import AppointmentTools from './AppointmentTools';
+import AppointmentStatus from './AppointmentStatus';
+import useUrlState from '../hooks/useUrlState';
 import RecordAudit from './RecordAudit';
 import { formatDate, formatMoney } from '../utils/clinicDate';
 import React, { useState, useEffect } from 'react';
@@ -6,22 +9,24 @@ import { toast } from 'react-hot-toast';
 import { CalendarDays, FileText, Pill, Calendar, X, Printer } from 'lucide-react';
 import { printPrescription } from '../utils/printHelper';
 
-export function AppointmentsView() {
+export function AppointmentsView({ initialSearchQuery }) {
   const [appointments, setAppointments] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [search, setSearch] = useState('');
-  const [date, setDate] = useState('');
-  const [doctorId, setDoctorId] = useState('');
-  const [specialtyId, setSpecialtyId] = useState('');
+  const [filterStatus, setFilterStatus] = useUrlState('status', 'all');
+  const [search, setSearch] = useUrlState('q', '');
+  useEffect(() => { if (initialSearchQuery !== undefined) setSearch(initialSearchQuery); }, [initialSearchQuery, setSearch]);
+  const [date, setDate] = useUrlState('date', '');
+  const [doctorId, setDoctorId] = useUrlState('doctor', '');
+  const [specialtyId, setSpecialtyId] = useUrlState('specialty', '');
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
+  useEffect(() => { const update = () => setRefresh(n => n + 1); const timer = setInterval(update, 30000); window.addEventListener('focus', update); window.addEventListener('clinic-updated', update); return () => { clearInterval(timer); window.removeEventListener('focus', update); window.removeEventListener('clinic-updated', update); }; }, []);
 
   // State Phân trang
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useUrlState('page', 1);
   const itemsPerPage = 8;
 
   // State Modal xem Bệnh án dành cho Admin
@@ -43,14 +48,17 @@ export function AppointmentsView() {
       }).finally(() => { if (active) setLoading(false); });
     }, 250);
     return () => { active = false; clearTimeout(timer); };
-  }, [currentPage, filterStatus, search, date, doctorId, specialtyId, refresh]);
+  }, [currentPage, filterStatus, search, date, doctorId, specialtyId, refresh, setCurrentPage]);
   useEffect(() => {
     Promise.all([api.get('/doctors'), api.get('/specialties')]).then(([docs, specs]) => { setDoctors(docs.data); setSpecialties(specs.data); }).catch(() => setError('Không tải được bộ lọc.'));
   }, []);
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await api.put(`/appointments/${id}/status`, { status });
+      const reason = status === 'cancelled' || status === 'no_show' ? window.prompt('Nhập lý do:') : '';
+      if ((status === 'cancelled' || status === 'no_show') && !reason?.trim()) return;
+      await api.put(`/appointments/${id}/status`, { status, reason });
+      window.dispatchEvent(new Event('clinic-updated'));
       toast.success("Cập nhật trạng thái lịch hẹn thành công!");
       setRefresh(n => n + 1);
     } catch (err) {
@@ -83,7 +91,7 @@ export function AppointmentsView() {
           </p>
         </div>
 
-        <select 
+        <select
           value={filterStatus}
           onChange={changeFilter(setFilterStatus)}
           style={{ padding: '8px 16px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: '#fdfbf7', fontSize: '13px', outline: 'none' }}
@@ -91,12 +99,12 @@ export function AppointmentsView() {
           <option value="all">-- Tất cả trạng thái --</option>
           <option value="pending">Chờ duyệt</option>
           <option value="confirmed">Đã duyệt</option>
-          <option value="completed">Đã khám xong</option>
+          <option value="arrived">Đã tiếp nhận</option><option value="in_progress">Đang khám</option><option value="no_show">Vắng mặt</option><option value="completed">Đã khám xong</option>
           <option value="cancelled">Đã hủy</option>
         </select>
       </div>
 
-      <div className="clinic-flex-wrap">
+      <div className="clinic-flex-wrap appointment-filter-bar">
         <input className="clinic-input" style={{ maxWidth: 260 }} aria-label="Tìm bệnh nhân" placeholder="Tên hoặc số điện thoại" value={search} onChange={changeFilter(setSearch)} />
         <input className="clinic-input" style={{ maxWidth: 180 }} aria-label="Lọc ngày khám" type="date" value={date} onChange={changeFilter(setDate)} />
         <select aria-label="Lọc chuyên khoa" value={specialtyId} onChange={changeFilter(setSpecialtyId)}><option value="">Tất cả chuyên khoa</option>{specialties.map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}</select>
@@ -134,21 +142,20 @@ export function AppointmentsView() {
                     <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                   </td>
                   <td>
-                    <span className={`badge-status ${apt.status === 'completed' ? 'active' : apt.status === 'confirmed' ? 'active' : 'pending'}`}>
-                      {apt.status === 'completed' ? 'Đã khám xong' : apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
-                    </span>
+                    <AppointmentStatus status={apt.status} />
                   </td>
                   <td>
+                    <AppointmentTools appointment={apt} admin onUpdated={() => setRefresh(n => n + 1)} />
                     {/* THAO TÁC 1: DUYỆT / HỦY KHI Ở DẠNG CHỜ DUYỆT */}
                     {apt.status === 'pending' && (
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button 
+                        <button
                           onClick={() => handleUpdateStatus(apt.id, 'confirmed')}
                           style={{ padding: '4px 10px', borderRadius: '8px', border: 'none', backgroundColor: '#2e6f40', color: 'white', fontSize: '12px', cursor: 'pointer' }}
                         >
                           Duyệt
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleUpdateStatus(apt.id, 'cancelled')}
                           style={{ padding: '4px 10px', borderRadius: '8px', border: 'none', backgroundColor: '#b84343', color: 'white', fontSize: '12px', cursor: 'pointer' }}
                         >
@@ -158,18 +165,19 @@ export function AppointmentsView() {
                     )}
 
                     {/* 2. XOÁ LỊCH HẸN KHI Ở TRẠNG THÁI ĐÃ DUYỆT:*/}
+                      {apt.status === 'confirmed' && (<div className="clinic-flex-wrap"><button onClick={() => handleUpdateStatus(apt.id, 'arrived')}>Tiếp nhận</button><button onClick={() => handleUpdateStatus(apt.id, 'no_show')}>Vắng mặt</button></div>)}
                       {apt.status === 'confirmed' && (
-                        <button 
+                        <button
                           onClick={() => handleUpdateStatus(apt.id, 'cancelled')}
                           style={{ padding: '4px 10px', borderRadius: '8px', border: '1px solid #b84343', backgroundColor: '#fdf2f2', color: '#b84343', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}
                         >
                           Hủy Lịch Hẹn
                         </button>
                       )}
-                    
+
                     {/* THAO TÁC 2: NÚT XEM KẾT QUẢ KHÁM NẾU ĐÃ KHÁM XONG */}
                     {apt.status === 'completed' && (
-                      <button 
+                      <button
                         onClick={() => handleOpenRecordModal(apt)}
                         className="btn-primary-natural"
                         style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
@@ -194,15 +202,15 @@ export function AppointmentsView() {
        {/* Thanh Phân Trang */}
        {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', paddingBottom: '8px' }}>
-          <button 
+          <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            style={{ 
+            style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: '34px', height: '34px', borderRadius: '50%',
-              border: '1px solid #e6e6df', 
-              backgroundColor: currentPage === 1 ? '#f5f5f0' : '#ffffff', 
-              color: currentPage === 1 ? '#cccccc' : '#5a5a40', 
+              border: '1px solid #e6e6df',
+              backgroundColor: currentPage === 1 ? '#f5f5f0' : '#ffffff',
+              color: currentPage === 1 ? '#cccccc' : '#5a5a40',
               cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease'
             }}
@@ -229,15 +237,15 @@ export function AppointmentsView() {
             </button>
           ))}
 
-          <button 
+          <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            style={{ 
+            style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: '34px', height: '34px', borderRadius: '50%',
-              border: '1px solid #e6e6df', 
-              backgroundColor: currentPage === totalPages ? '#f5f5f0' : '#ffffff', 
-              color: currentPage === totalPages ? '#cccccc' : '#5a5a40', 
+              border: '1px solid #e6e6df',
+              backgroundColor: currentPage === totalPages ? '#f5f5f0' : '#ffffff',
+              color: currentPage === totalPages ? '#cccccc' : '#5a5a40',
               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s ease'
             }}
@@ -265,14 +273,14 @@ export function AppointmentsView() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'serif' }}>
+                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-ui)' }}>
                    CHI TIẾT KẾT QUẢ KHÁM BỆNH
                 </div>
                 <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
                   Bệnh nhân: {selectedRecord.appointment.patient_name} • Mã phiếu: LH-{selectedRecord.appointment.id}
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowRecordModal(false)}
                 style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}
               >
@@ -342,7 +350,7 @@ export function AppointmentsView() {
             </div>
 
             <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button 
+              <button
                 onClick={() => printPrescription(selectedRecord.appointment, selectedRecord.medicalRecord)}
                 className="btn-primary-natural"
                 style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}

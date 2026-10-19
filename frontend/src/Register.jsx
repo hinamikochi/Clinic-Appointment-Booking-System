@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
-import { useNavigate, Link } from 'react-router-dom'; 
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { 
-  Stethoscope, 
-  User, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
-  Loader2, 
-  X,
-  Sparkles
-} from 'lucide-react';
+import {
+  Stethoscope,
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  X} from 'lucide-react';
 import './Auth.css';
 
 function Register() {
@@ -54,7 +52,7 @@ function Register() {
 
         <div className="auth-banner-side">
           <div className="banner-overlay"></div>
-          
+
           <div className="banner-brand-box">
             <div className="banner-brand-icon">
               <Stethoscope size={26} color="#ffffff" />
@@ -91,12 +89,12 @@ function Register() {
               <label>Họ và Tên</label>
               <div className="input-icon-wrapper">
                 <User className="input-icon" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Nguyễn Văn A" 
+                <input
+                  type="text"
+                  placeholder="Nguyễn Văn A"
                   required
                   value={formData.full_name}
-                  onChange={(e) => setFormData({...formData, full_name: e.target.value})} 
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                 />
               </div>
             </div>
@@ -105,12 +103,12 @@ function Register() {
               <label>Địa chỉ Email</label>
               <div className="input-icon-wrapper">
                 <Mail className="input-icon" size={18} />
-                <input 
-                  type="email" 
-                  placeholder="benhnhan@gmail.com" 
+                <input
+                  type="email"
+                  placeholder="benhnhan@gmail.com"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
             </div>
@@ -119,16 +117,16 @@ function Register() {
               <label>Mật khẩu</label>
               <div className="input-icon-wrapper">
                 <Lock className="input-icon" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
-                <button 
-                  type="button" 
-                  className="eye-toggle-btn"
+                <button
+                  type="button"
+                  className="eye-toggle-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

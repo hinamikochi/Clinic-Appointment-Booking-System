@@ -1,9 +1,10 @@
+import NotificationCenter from './NotificationCenter';
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, Home, Plus, CheckCircle2, AlertCircle, X, Stethoscope, Building2, User } from 'lucide-react';
 
-export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem }) {
+export function Header({ onOpenBooking, onSelectSearchItem }) {
   const navigate = useNavigate();
 
   // State Tìm Kiếm & Dữ Liệu Tra Cứu
@@ -42,18 +43,18 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
   }, []);
 
   const query = searchTerm.trim().toLowerCase();
-  
-  const filteredDoctors = query ? doctors.filter(d => 
-    d.User?.full_name?.toLowerCase().includes(query) || 
+
+  const filteredDoctors = query ? doctors.filter(d =>
+    d.User?.full_name?.toLowerCase().includes(query) ||
     d.Specialty?.name?.toLowerCase().includes(query)
   ) : [];
 
-  const filteredSpecialties = query ? specialties.filter(s => 
+  const filteredSpecialties = query ? specialties.filter(s =>
     s.name?.toLowerCase().includes(query)
   ) : [];
 
-  const filteredAppointments = query ? appointments.filter(a => 
-    a.patient_name?.toLowerCase().includes(query) || 
+  const filteredAppointments = query ? appointments.filter(a =>
+    a.patient_name?.toLowerCase().includes(query) ||
     a.patient_phone?.includes(query)
   ) : [];
 
@@ -64,7 +65,7 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
     if (e.key === 'Enter') {
       e.preventDefault();
       if (!searchTerm.trim()) return;
-      
+
       setShowSearchDropdown(false);
 
       // Tự động phân loại và chuyển sang tab khớp từ khóa nhất khi ấn ENTER
@@ -83,9 +84,9 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
       {/* 1. THANH TÌM KIẾM HỆ THỐNG */}
       <div className="header-search" style={{ position: 'relative' }}>
         <Search size={16} color="#8a8a70" />
-        <input 
-          type="text" 
-          placeholder="Tìm kiếm bác sĩ, chuyên khoa, bệnh nhân... (Ấn Enter)" 
+        <input
+          type="text"
+          placeholder="Tìm kiếm bác sĩ, chuyên khoa, bệnh nhân... (Ấn Enter)"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -119,7 +120,7 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
                     <Stethoscope size={12} /> BÁC SĨ ({filteredDoctors.length})
                   </div>
                   {filteredDoctors.map(doc => (
-                    <div 
+                    <div
                       key={doc.id}
                       onClick={() => {
                         if (onSelectSearchItem) {
@@ -144,7 +145,7 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
                     <Building2 size={12} /> CHUYÊN KHOA ({filteredSpecialties.length})
                   </div>
                   {filteredSpecialties.map(spec => (
-                    <div 
+                    <div
                       key={spec.id}
                       onClick={() => {
                         if (onSelectSearchItem) {
@@ -169,7 +170,7 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
                     <User size={12} /> BỆNH NHÂN / PHIẾU ĐẶT ({filteredAppointments.length})
                   </div>
                   {filteredAppointments.map(apt => (
-                    <div 
+                    <div
                       key={apt.id}
                       onClick={() => {
                         if (onSelectSearchItem) {
@@ -198,15 +199,15 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
       </div>
 
       {/* 2. CÁC NÚT THAO TÁC */}
-      <div className="header-actions">
+      <div className="header-actions"><NotificationCenter />
         <button className="btn-primary-natural" onClick={onOpenBooking}>
           <Plus size={16} />
           <span>+ Tạo Lịch Hẹn Mới</span>
         </button>
 
-        <button 
+        <button
           className="btn-secondary-natural"
-          onClick={() => navigate('/')} 
+          onClick={() => navigate('/')}
           title="Xem Trang Chủ Phòng Khám"
         >
           <Home size={16} />
@@ -215,19 +216,19 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
 
         {/* NÚT THÔNG BÁO */}
         <div style={{ position: 'relative' }}>
-          <div 
+          <div
             onClick={() => setShowNotifications(!showNotifications)}
-            style={{ 
-              position: 'relative', cursor: 'pointer', padding: '10px', borderRadius: '50%', 
-              background: showNotifications ? '#e6e6df' : '#f0f0ea', transition: 'all 0.2s ease' 
+            style={{
+              position: 'relative', cursor: 'pointer', padding: '10px', borderRadius: '50%',
+              background: showNotifications ? '#e6e6df' : '#f0f0ea', transition: 'all 0.2s ease'
             }}
             title="Thông báo hệ thống"
           >
             <Bell size={18} color="#5a5a40" />
             {pendingAppointments.length > 0 && (
-              <span style={{ 
-                position: 'absolute', top: '4px', right: '4px', width: '9px', height: '9px', 
-                borderRadius: '50%', background: '#b84343', border: '2px solid #ffffff' 
+              <span style={{
+                position: 'absolute', top: '4px', right: '4px', width: '9px', height: '9px',
+                borderRadius: '50%', background: '#b84343', border: '2px solid #ffffff'
               }} />
             )}
           </div>
@@ -254,7 +255,7 @@ export function Header({ title, onOpenBooking, setActiveTab, onSelectSearchItem 
               <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '10px' }}>
                 {pendingAppointments.length > 0 ? (
                   pendingAppointments.map((apt) => (
-                    <div 
+                    <div
                       key={apt.id}
                       onClick={() => {
                         if (onSelectSearchItem) onSelectSearchItem('appointments', apt.patient_name, apt);

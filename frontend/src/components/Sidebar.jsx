@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Stethoscope, 
-  Building2, 
+import {
+  LayoutDashboard,
+  Stethoscope,
+  Building2,
   CalendarDays,
   User,
   ShieldCheck,
@@ -22,6 +22,8 @@ export function Sidebar({ activeTab, setActiveTab }) {
     { id: 'appointments', label: 'Quản Lý Lịch Hẹn', icon: CalendarDays },
     { id: 'doctors', label: 'Quản Lý Bác Sĩ', icon: Stethoscope },
     { id: 'specialties', label: 'Quản Lý Chuyên Khoa', icon: Building2 },
+    { id: 'accounts', label: 'Quản Lý Tài Khoản', icon: User },
+    { id: 'reports', label: 'Báo Cáo Hoạt Động', icon: LayoutDashboard },
     { id: 'profile', label: 'Hồ Sơ & Đổi Mật Khẩu', icon: User },
   ];
 
@@ -54,7 +56,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              aria-label={item.label} title={item.label} onClick={() => setActiveTab(item.id)}
               className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
             >
               <div className="nav-item-content">
@@ -80,9 +82,9 @@ export function Sidebar({ activeTab, setActiveTab }) {
             <ShieldCheck size={12} color="#5a5a40" /> System Admin
           </div>
         </div>
-        <button 
-          onClick={handleLogout} 
-          title="Đăng xuất" 
+        <button
+          onClick={handleLogout}
+          title="Đăng xuất"
           style={{ background: 'none', border: 'none', padding: '6px', color: '#8a8a70', cursor: 'pointer' }}
         >
           <LogOut size={16} />

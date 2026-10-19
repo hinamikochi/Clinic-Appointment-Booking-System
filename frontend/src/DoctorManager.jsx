@@ -2,11 +2,11 @@ import ScheduleEditor from './components/ScheduleEditor';
 import React, { useState, useEffect, useCallback } from 'react';
 import api from './api';
 import { toast } from 'react-hot-toast';
-import { 
-  Stethoscope, 
-  Search, 
-  Plus, 
-  Trash2, 
+import {
+  Stethoscope,
+  Search,
+  Plus,
+  Trash2,
   XCircle,
   Edit,
   Save
@@ -17,7 +17,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   const [specialties, setSpecialties] = useState([]);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [scheduleDoctor, setScheduleDoctor] = useState(null);
@@ -53,7 +53,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
   const fetchData = useCallback(async () => {
     try {
-      const resDocs = await api.get('/doctors');
+      const resDocs = await api.get('/admin/doctors');
       setDoctors(resDocs.data);
 
       const resSpecs = await api.get('/specialties');
@@ -107,8 +107,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     }
 
     try {
-      await api.post('/admin/doctors', formData);      
-     toast.success(" Tạo tài khoản Bác sĩ thành công!");
+      await api.post('/admin/doctors', formData);
+     toast.success("Tạo tài khoản bác sĩ thành công!");setShowAddModal(false);
       setFormData({
         full_name: '',
         email: '',
@@ -139,6 +139,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     }
   };
 
+  const toggleAvailability = async doc => { const reason=window.prompt(doc.acceptingBookings ? 'Lý do ngừng nhận lịch:' : 'Lý do mở nhận lịch:'); if(!reason?.trim())return; const cancelAppointments=doc.acceptingBookings && window.confirm('Hủy các lịch CHƯA TIẾP NHẬN và gửi thông báo? Chọn Hủy để giữ các lịch hiện tại và chỉ dừng nhận lịch mới.'); try{await api.put(`/admin/doctors/${doc.id}/availability`,{acceptingBookings:!doc.acceptingBookings,reason,cancelAppointments});await fetchData();toast.success('Đã cập nhật nhận lịch.');}catch(error){toast.error(error.response?.data?.message||'Không cập nhật được.');}};
   const filteredDoctors = doctors.filter(doc => {
     const matchesSearch = doc.User?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           doc.User?.email?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -148,13 +149,13 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-      {scheduleDoctor && <><button type="button" onClick={() => setScheduleDoctor(null)}>Đóng lịch làm việc</button><ScheduleEditor key={scheduleDoctor.id} doctor={scheduleDoctor} onSaved={fetchData} /></>}
+      {scheduleDoctor && <ScheduleEditor key={scheduleDoctor.id} doctor={scheduleDoctor} onSaved={fetchData} onClose={() => setScheduleDoctor(null)} />}
       <div className="section-header-flex" style={{ backgroundColor: '#ffffff', padding: '20px 24px', borderRadius: '20px', border: '1px solid #e6e6df' }}>
         <div>
           <h2 className="section-title-garamond" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Stethoscope size={24} color="#5a5a40" /> Quản Lý Danh Sách Bác Sĩ
           </h2>
-          <p style={{ fontSize: '13px', color: '#8a8a70', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#62624d', margin: '4px 0 0 0' }}>
             Tổng số: {doctors.length} bác sĩ trong cơ sở dữ liệu hệ thống
           </p>
         </div>
@@ -168,15 +169,15 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         <div className="header-search" style={{ flex: 1, backgroundColor: '#ffffff', border: '1px solid #e6e6df' }}>
           <Search size={16} color="#8a8a70" />
-          <input 
-            type="text" 
-            placeholder="Tìm theo tên bác sĩ, email..." 
+          <input
+            type="text"
+            placeholder="Tìm theo tên bác sĩ, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <select 
+        <select
           value={selectedSpecialty}
           onChange={(e) => setSelectedSpecialty(e.target.value)}
           style={{ padding: '8px 16px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: '#fdfbf7', fontSize: '13px', color: '#2d2d2a', outline: 'none' }}
@@ -208,21 +209,21 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                     <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#2d2d2a', margin: '4px 0 2px 0' }}>
                       {doc.User?.full_name}
                     </h3>
-                    <div style={{ fontSize: '12px', color: '#8a8a70' }}>{doc.degree}</div>
+                    <div style={{ fontSize: '12px', color: '#62624d' }}>{doc.degree}</div>
                   </div>
                 </div>
 
                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#8a8a70' }}>Email:</span>
+                    <span style={{ color: '#62624d' }}>Email:</span>
                     <span style={{ fontWeight: '500', color: '#2d2d2a' }}>{doc.User?.email}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#8a8a70' }}>Số phòng khám:</span>
+                    <span style={{ color: '#62624d' }}>Số phòng khám:</span>
                     <span style={{ fontWeight: '700', color: '#5a5a40' }}>{doc.roomNumber || 'Phòng 101 - Tầng 1'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#8a8a70' }}>Giá khám niêm yết:</span>
+                    <span style={{ color: '#62624d' }}>Giá khám niêm yết:</span>
                     <span style={{ fontWeight: '700', color: '#2e6f40' }}>
                       {doc.consultationFee ? `${Number(doc.consultationFee).toLocaleString('vi-VN')} VNĐ` : '200.000 VNĐ'}
                     </span>
@@ -231,16 +232,16 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               </div>
 
               {/* Nút sửa và xoá */}
-              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f5f5f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button 
+              <div className="doctor-card-actions">
+                <button
                   onClick={() => handleOpenEditModal(doc)}
-                  style={{ background: 'none', border: 'none', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}
+                  className="doctor-card-action"
                 >
                   <Edit size={14} /> Chỉnh Sửa
-                </button><button type="button" className="btn-secondary-natural" onClick={() => setScheduleDoctor(doc)}>Lịch làm việc</button>
-                <button 
+                </button><button type="button" className="doctor-card-action" onClick={() => setScheduleDoctor(doc)}>Lịch làm việc</button><button type="button" className="doctor-card-action" onClick={() => toggleAvailability(doc)}>{doc.acceptingBookings ? 'Ngừng nhận lịch' : 'Mở nhận lịch'}</button>
+                <button
                   onClick={() => handleDeleteDoctor(doc.id)}
-                  style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer' }}
+                  className="doctor-card-action doctor-card-action-danger"
                 >
                   <Trash2 size={14} /> Xóa
                 </button>
@@ -248,7 +249,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
             </div>
           ))
         ) : (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '36px', color: '#8a8a70', backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e6e6df' }}>
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '36px', color: '#62624d', backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e6e6df' }}>
             Không tìm thấy bác sĩ nào phù hợp với từ khóa "{searchQuery}"
           </div>
         )}
@@ -265,8 +266,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
             <form onSubmit={handleCreateDoctor} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Họ và tên bác sĩ *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-1">Họ và tên bác sĩ *</label>
+                <input id="doctormanager-field-1"
                   type="text" required placeholder="Ví dụ: Nguyễn Lân Việt"
                   value={formData.full_name}
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})}
@@ -276,8 +277,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Email *</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-2">Email *</label>
+                  <input id="doctormanager-field-2"
                     type="email" required placeholder="doctor@clinic.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -285,8 +286,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mật khẩu *</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-3">Mật khẩu *</label>
+                  <input id="doctormanager-field-3"
                     type="password" required placeholder="******"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -297,8 +298,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Chuyên khoa</label>
-                  <select 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-4">Chuyên khoa</label>
+                  <select id="doctormanager-field-4"
                     value={formData.specialtyId}
                     onChange={(e) => setFormData({...formData, specialtyId: e.target.value})}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
@@ -309,8 +310,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Học vị</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-5">Học vị</label>
+                  <input id="doctormanager-field-5"
                     type="text" value={formData.degree}
                     onChange={(e) => setFormData({...formData, degree: e.target.value})}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
@@ -320,8 +321,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Số phòng (Tự động/Tùy chỉnh)</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }} htmlFor="doctormanager-field-6">Số phòng (Tự động/Tùy chỉnh)</label>
+                  <input id="doctormanager-field-6"
                     type="text" placeholder="Tự động cấp phòng trống"
                     value={formData.roomNumber}
                     onChange={(e) => setFormData({...formData, roomNumber: e.target.value})}
@@ -329,8 +330,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Giá khám (Tự động/Tùy chỉnh)</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }} htmlFor="doctormanager-field-7">Giá khám (Tự động/Tùy chỉnh)</label>
+                  <input id="doctormanager-field-7"
                     type="number" placeholder="Mặc định theo khoa"
                     value={formData.consultationFee}
                     onChange={(e) => setFormData({...formData, consultationFee: e.target.value})}
@@ -340,8 +341,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn / Giới thiệu bác sĩ</label>
-                <textarea 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-8">Mô tả ngắn / Giới thiệu bác sĩ</label>
+                <textarea id="doctormanager-field-8"
                   rows={3}
                   placeholder="Giới thiệu kinh nghiệm, quá trình công tác của bác sĩ..."
                   value={formData.description}
@@ -353,17 +354,17 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="https://..."
                     value={formData.image}
                     onChange={(e) => setFormData({...formData, image: e.target.value})}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none' }}
                   />
                   {formData.image && (
-                    <img 
-                      src={formData.image} 
-                      alt="Xem trước ảnh" 
+                    <img
+                      src={formData.image}
+                      alt="Xem trước ảnh"
                       style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e6e6df' }}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
@@ -391,8 +392,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
             <form onSubmit={handleUpdateDoctorSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Họ và tên bác sĩ *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-9">Họ và tên bác sĩ *</label>
+                <input id="doctormanager-field-9"
                   type="text" required
                   value={editFormData.full_name}
                   onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})}
@@ -402,8 +403,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Chuyên khoa</label>
-                  <select 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-10">Chuyên khoa</label>
+                  <select id="doctormanager-field-10"
                     value={editFormData.specialtyId}
                     onChange={(e) => setEditFormData({...editFormData, specialtyId: e.target.value})}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
@@ -414,8 +415,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Học vị</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-11">Học vị</label>
+                  <input id="doctormanager-field-11"
                     type="text" value={editFormData.degree}
                     onChange={(e) => setEditFormData({...editFormData, degree: e.target.value})}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
@@ -426,8 +427,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               {/* Điều chỉnh số phòng và giá khám */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }}>Số phòng khám *</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a5a40' }} htmlFor="doctormanager-field-12">Số phòng khám *</label>
+                  <input id="doctormanager-field-12"
                     type="text" required placeholder="Phòng 101 - Tầng 1"
                     value={editFormData.roomNumber}
                     onChange={(e) => setEditFormData({...editFormData, roomNumber: e.target.value})}
@@ -435,8 +436,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2e6f40' }}>Giá khám niêm yết (VNĐ) *</label>
-                  <input 
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#2e6f40' }} htmlFor="doctormanager-field-13">Giá khám niêm yết (VNĐ) *</label>
+                  <input id="doctormanager-field-13"
                     type="number" required step="10000" placeholder="200000"
                     value={editFormData.consultationFee}
                     onChange={(e) => setEditFormData({...editFormData, consultationFee: e.target.value})}
@@ -446,8 +447,8 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Mô tả ngắn / Giới thiệu bác sĩ</label>
-                <textarea 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="doctormanager-field-14">Mô tả ngắn / Giới thiệu bác sĩ</label>
+                <textarea id="doctormanager-field-14"
                   rows={3}
                   placeholder="Giới thiệu kinh nghiệm, quá trình công tác của bác sĩ..."
                   value={editFormData.description}
@@ -459,17 +460,17 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Link Hình Ảnh Bác Sĩ (URL)</label>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="https://..."
                     value={editFormData.image}
                     onChange={(e) => setEditFormData({...editFormData, image: e.target.value})}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none' }}
                   />
                   {editFormData.image && (
-                    <img 
-                      src={editFormData.image} 
-                      alt="Xem trước ảnh" 
+                    <img
+                      src={editFormData.image}
+                      alt="Xem trước ảnh"
                       style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e6e6df' }}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />

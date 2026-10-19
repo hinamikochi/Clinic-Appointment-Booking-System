@@ -1,3 +1,7 @@
+import {readBookingDraft,saveBookingDraft,clearBookingDraft} from './hooks/useBookingDraft';
+import { useRef, useCallback } from 'react';
+import useDialogAccessibility from './hooks/useDialogAccessibility';
+import { AppointmentReceipt } from './components/AppointmentTools';
 import AvailableSlots from './components/AvailableSlots';
 import { clinicToday, formatMoney } from './utils/clinicDate';
 import React, { useState, useEffect } from 'react';
@@ -6,22 +10,31 @@ import { X, Plus, User, Stethoscope } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId }) {
+  const bookingDraftKey='clinic-booking:'+(JSON.parse(localStorage.getItem('user') || 'null')?.id || 'guest');
+  const storedDraft=readBookingDraft(bookingDraftKey);
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
   // Form State
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [patientGender, setPatientGender] = useState('Nam');
-  const [patientAge, setPatientAge] = useState(30);
+  const [patientName, setPatientName] = useState(storedDraft.patientName || (''));
+  const [patientPhone, setPatientPhone] = useState(storedDraft.patientPhone || (''));
+  const [patientGender, setPatientGender] = useState('');
+  const [patientAge, setPatientAge] = useState('');
 
   const [specialtyId, setSpecialtyId] = useState(initialSpecialtyId || '');
   const [doctorId, setDoctorId] = useState(initialDoctorId || '');
   const [appointmentDate, setAppointmentDate] = useState(clinicToday());
   const [timeSlot, setTimeSlot] = useState('09:00 - 09:30');
-  const [symptoms, setSymptoms] = useState('');
+  const [symptoms, setSymptoms] = useState(storedDraft.symptoms || (''));
   const [loading, setLoading] = useState(false);
+  useEffect(()=>{saveBookingDraft(bookingDraftKey,{patientName,patientPhone,symptoms});},[bookingDraftKey,patientName,patientPhone,symptoms]);
   const [receipt, setReceipt] = useState(null);
+  const dialogRef = useRef(null);
+  const requestKey = useRef(storedDraft.requestKey || crypto.randomUUID());
+  const requestMounted=useRef(false);
+  const close = useCallback(() => onClose(), [onClose]);
+  useDialogAccessibility(dialogRef, close, !receipt);
+  useEffect(() => { if(requestMounted.current) requestKey.current = crypto.randomUUID(); else requestMounted.current=true; }, [patientName, patientPhone, patientGender, patientAge, specialtyId, doctorId, appointmentDate, timeSlot, symptoms]);
 
   // Tải danh sách Chuyên khoa & Bác sĩ từ Backend
   useEffect(() => {
@@ -34,8 +47,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
         setDoctors(resDocs.data);
 
         // Tự động chọn Chuyên khoa & Bác sĩ đầu khi mở form đăng ký khám
-        if (!initialSpecialtyId && resSpecs.data.length > 0) {
-          const firstSpecId = resSpecs.data[0].id;
+        if (resSpecs.data.length > 0 && !initialDoctorId) {
+          const firstSpecId = initialSpecialtyId || resSpecs.data[0].id;
           setSpecialtyId(firstSpecId);
           const docsInSpec = resDocs.data.filter(d => String(d.specialtyId) === String(firstSpecId));
           if (docsInSpec.length > 0 && !initialDoctorId) {
@@ -75,7 +88,9 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
     setLoading(true);
     try {
+      saveBookingDraft(bookingDraftKey,{patientName,patientPhone,symptoms,requestKey:requestKey.current});
       const response = await api.post('/appointments', {
+        requestKey: requestKey.current,
         patient_name: patientName,
         patient_phone: patientPhone,
         patient_gender: patientGender,
@@ -87,10 +102,10 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
         symptoms
       });
 
+      clearBookingDraft(bookingDraftKey);
       toast.success(' Đặt lịch khám bệnh thành công! Phòng khám sẽ liên hệ xác nhận với bạn.');
       if (onSuccess) onSuccess();
-      if (response.data.data.bookingCode) setReceipt(response.data.data.bookingCode);
-      else onClose();
+      setReceipt({ ...response.data.data, DoctorInfo: doctors.find(d => String(d.id) === String(doctorId)) });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch khám');
     } finally {
@@ -98,10 +113,11 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
     }
   };
 
+  if (receipt) return <AppointmentReceipt appointment={receipt} bookingCode={receipt.bookingCode} onClose={onClose} />;
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(45, 45, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Đặt lịch khám bệnh" tabIndex={-1} className="clinic-booking-dialog" style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: 'rgba(45, 45, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       <div style={{ backgroundColor: '#ffffff', width: '100%', maxWidth: '540px', borderRadius: '24px', overflow: 'hidden', border: '1px solid #e6e6df', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-        
+
         {/* Header Modal */}
         <div style={{ backgroundColor: '#5a5a40', color: '#ffffff', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -110,18 +126,18 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Đặt Lịch Khám Bệnh Trực Tuyến</h3>
-              <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>Đăng ký nhanh chóng - Không phải chờ đợi</div>
+              <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>Chọn lịch phù hợp, theo dõi trạng thái xác nhận</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', opacity: 0.8 }}>
+          <button aria-label="Đóng form đặt lịch" onClick={onClose} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', opacity: 0.8 }}>
             <X size={20} />
           </button>
         </div>
 
-        {receipt && <div style={{ padding: 24 }} role="status"><h3>Đặt lịch thành công</h3><p>Lưu mã nhận lịch để thêm lịch hẹn vào tài khoản bệnh nhân sau khi đăng nhập.</p><code style={{ overflowWrap: 'anywhere', userSelect: 'all' }}>{receipt}</code><p><button type="button" className="btn-primary-natural" onClick={onClose}>Đã lưu mã, đóng</button></p></div>}
+
         {/* Body Form */}
-        <form hidden={!!receipt} onSubmit={handleSubmit} style={{ padding: '24px', display: receipt ? 'none' : 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
-          
+        <form className="clinic-booking-form" onSubmit={handleSubmit} style={{ padding: '24px', display: receipt ? 'none' : 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+
           {/* Bước 1: Thông tin bệnh nhân */}
           <div style={{ backgroundColor: '#fdfbf7', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontSize: '12px', fontWeight: '700', color: '#5a5a40', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -130,16 +146,16 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Họ và tên *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-1">Họ và tên *</label>
+                <input id="bookingmodal-field-1"
                   type="text" required placeholder="Ví dụ: Nguyễn Văn An"
                   value={patientName} onChange={(e) => setPatientName(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Số điện thoại *</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-2">Số điện thoại *</label>
+                <input id="bookingmodal-field-2"
                   type="text" required placeholder="0912 xxx xxx"
                   value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
@@ -149,19 +165,20 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Giới tính</label>
-                <select 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-3">Giới tính</label>
+                <select id="bookingmodal-field-3" required
                   value={patientGender} onChange={(e) => setPatientGender(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 >
+                  <option value="">Chọn giới tính</option>
                   <option value="Nam">Nam</option>
                   <option value="Nữ">Nữ</option>
                   <option value="Khác">Khác</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Tuổi</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-4">Tuổi</label>
+                <input id="bookingmodal-field-4"
                   type="number" required min="0" max="130" value={patientAge} onChange={(e) => setPatientAge(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 />
@@ -177,8 +194,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Chuyên khoa</label>
-                <select 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-5">Chuyên khoa</label>
+                <select id="bookingmodal-field-5"
                   value={specialtyId} onChange={(e) => handleSpecialtyChange(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 >
@@ -189,8 +206,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Bác sĩ khám</label>
-                <select 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-6">Bác sĩ khám</label>
+                <select id="bookingmodal-field-6"
                   value={doctorId} onChange={(e) => setDoctorId(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 >
@@ -207,8 +224,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Ngày khám</label>
-                <input 
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-7">Ngày khám</label>
+                <input id="bookingmodal-field-7"
                   type="date" required min={clinicToday()} value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 />
@@ -224,8 +241,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
           {/* Triệu chứng / Lý do khám */}
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Lý do khám / Triệu chứng ban đầu</label>
-            <textarea 
+            <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }} htmlFor="bookingmodal-field-8">Lý do khám / Triệu chứng ban đầu</label>
+            <textarea id="bookingmodal-field-8"
               rows={2} placeholder="Mô tả các dấu hiệu mệt mỏi, đau nhức..."
               value={symptoms} onChange={(e) => setSymptoms(e.target.value)}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px', fontFamily: 'inherit' }}

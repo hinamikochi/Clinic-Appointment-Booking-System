@@ -1,3 +1,10 @@
+import {readBookingDraft,saveBookingDraft,clearBookingDraft} from './hooks/useBookingDraft';
+import AppointmentTools, { AppointmentReceipt } from './components/AppointmentTools';
+import AppointmentStatus from './components/AppointmentStatus';
+import PatientProfiles, { ProfilePicker } from './components/PatientProfiles';
+import NotificationCenter from './components/NotificationCenter';
+import useUrlState from './hooks/useUrlState';
+import { useRef } from 'react';
 import ClaimBooking from './components/ClaimBooking';
 import AvailableSlots from './components/AvailableSlots';
 import { clinicToday, formatMoney, formatDate } from './utils/clinicDate';
@@ -5,12 +12,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { 
-  CalendarCheck, 
-  History, 
-  User, 
-  LogOut, 
-  Stethoscope, 
+import {
+  CalendarCheck,
+  History,
+  User,
+  LogOut,
+  Stethoscope,
   Home,
   FileText,
   Pill,
@@ -26,25 +33,28 @@ function PatientDashboard() {
   const navigate = useNavigate();
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
-  const [activeTab, setActiveTab] = useState('my-appointments');
+  const [activeTab, setActiveTab] = useUrlState('tab', 'my-appointments');
 
   const userStr = localStorage.getItem('user');
   const initialUser = userStr ? JSON.parse(userStr) : { id: 0, full_name: 'Bệnh Nhân', email: '' };
 
   const [userInfo, setUserInfo] = useState(initialUser);
 
+  const bookingDraftKey='clinic-booking:'+(initialUser.id);
+  const storedDraft=readBookingDraft(bookingDraftKey);
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [patientName, setPatientName] = useState(initialUser.full_name || '');
-  const [patientPhone, setPatientPhone] = useState(initialUser.phone || '');
-  const [patientGender, setPatientGender] = useState('Nam');
-  const [patientAge, setPatientAge] = useState(30);
+  const [patientName, setPatientName] = useState(storedDraft.patientName || (initialUser.full_name || ''));
+  const [patientPhone, setPatientPhone] = useState(storedDraft.patientPhone || (initialUser.phone || ''));
+  const [patientGender, setPatientGender] = useState(initialUser.gender || '');
+  const [patientAge, setPatientAge] = useState('');
   const [specialtyId, setSpecialtyId] = useState('');
   const [doctorId, setDoctorId] = useState('');
   const [appointmentDate, setAppointmentDate] = useState(clinicToday());
   const [timeSlot, setTimeSlot] = useState('09:00 - 09:30');
-  const [symptoms, setSymptoms] = useState('');
+  const [symptoms, setSymptoms] = useState(storedDraft.symptoms || (''));
   const [loading, setLoading] = useState(false);
+  useEffect(()=>{saveBookingDraft(bookingDraftKey,{patientName,patientPhone,symptoms});},[bookingDraftKey,patientName,patientPhone,symptoms]);
 
   // Lịch hẹn cá nhân của tôi
   const [myAppointments, setMyAppointments] = useState([]);
@@ -54,6 +64,11 @@ function PatientDashboard() {
   // State Modal Xem Đơn Thuốc / Kết Quả Khám
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
+  const [receipt, setReceipt] = useState(null);
+  const [patientProfileId, setPatientProfileId] = useState('');
+  const requestKey = useRef(storedDraft.requestKey || crypto.randomUUID());
+  const requestMounted=useRef(false);
+  useEffect(() => { if(requestMounted.current) requestKey.current = crypto.randomUUID(); else requestMounted.current=true; }, [patientName, patientPhone, patientGender, patientAge, specialtyId, doctorId, appointmentDate, timeSlot, symptoms, patientProfileId]);
 
   // Tải dữ liệu tự động
   const fetchData = useCallback(async () => {
@@ -68,9 +83,9 @@ function PatientDashboard() {
 
       if (resSpecs.data.length > 0) {
         const firstSpecId = resSpecs.data[0].id;
-        setSpecialtyId(firstSpecId);
+        setSpecialtyId(previous => previous || firstSpecId);
         const docsInSpec = resDocs.data.filter(d => String(d.specialtyId) === String(firstSpecId));
-        if (docsInSpec.length > 0) setDoctorId(docsInSpec[0].id);
+        if (docsInSpec.length > 0) setDoctorId(previous => previous || docsInSpec[0].id);
       }
 
       if (initialUser.id) {
@@ -92,6 +107,8 @@ function PatientDashboard() {
   useEffect(() => {
     document.title = "MyClinic - Cổng Thông Tin Bệnh Nhân";
     fetchData();
+    const timer=setInterval(fetchData,30000); window.addEventListener('focus',fetchData); window.addEventListener('clinic-updated',fetchData);
+    return () => { clearInterval(timer); window.removeEventListener('focus',fetchData); window.removeEventListener('clinic-updated',fetchData); };
   }, [fetchData]);
 
     // Hàm tính thời gian đến ngày khám
@@ -114,7 +131,7 @@ function PatientDashboard() {
     } else if (diffDays > 1) {
       return <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#e3f2fd', color: '#1565c0', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>🔵 Còn {diffDays} ngày</span>;
     } else {
-      return <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#f0f0ea', color: '#8a8a70', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>⚪ Đã qua</span>;
+      return <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#f0f0ea', color: '#62624d', padding: '3px 10px', borderRadius: '99px', display: 'inline-block' }}>⚪ Đã qua</span>;
     }
   };
 
@@ -141,7 +158,9 @@ function PatientDashboard() {
 
     setLoading(true);
     try {
-      await api.post('/appointments', {
+      saveBookingDraft(bookingDraftKey,{patientName,patientPhone,symptoms,requestKey:requestKey.current});
+      const response = await api.post('/appointments', {
+        requestKey: requestKey.current, patientProfileId: patientProfileId || null,
         patient_name: patientName,
         patient_phone: patientPhone,
         patient_gender: patientGender,
@@ -154,7 +173,9 @@ function PatientDashboard() {
         // Tài khoản được backend xác định từ JWT.
       });
 
+      clearBookingDraft(bookingDraftKey);
       toast.success(" Đặt lịch khám bệnh thành công!");
+      setReceipt({ ...response.data.data, DoctorInfo: doctors.find(d => String(d.id) === String(doctorId)) });
       setSymptoms('');
       fetchData();
       setActiveTab('my-appointments');
@@ -162,17 +183,6 @@ function PatientDashboard() {
       toast.error(err.response?.data?.message || "Lỗi đặt lịch khám");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCancelAppointment = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn hủy phiếu đặt lịch này?")) return;
-    try {
-      await api.put(`/appointments/${id}/cancel`);
-      toast.success("Đã hủy lịch hẹn thành công.");
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi khi hủy lịch hẹn');
     }
   };
 
@@ -194,8 +204,10 @@ function PatientDashboard() {
   const availableDoctors = doctors.filter(d => String(d.specialtyId) === String(specialtyId));
 
   // phân trang lịch khám
-  const totalAptPages = Math.ceil(myAppointments.length / aptsPerPage) || 1;
-  const paginatedAppointments = myAppointments.slice((aptPage - 1) * aptsPerPage, aptPage * aptsPerPage);
+  const [appointmentGroup,setAppointmentGroup]=useUrlState('group','upcoming');
+  const visibleAppointments=myAppointments.filter(a=>appointmentGroup==='all'||(appointmentGroup==='upcoming'?['pending','confirmed','arrived','in_progress'].includes(a.status)&&a.appointment_date>=clinicToday():['completed','cancelled','no_show'].includes(a.status)||a.appointment_date<clinicToday()));
+  const totalAptPages = Math.ceil(visibleAppointments.length / aptsPerPage) || 1;
+  const paginatedAppointments = visibleAppointments.slice((aptPage - 1) * aptsPerPage, aptPage * aptsPerPage);
 
   return (
     <div className="admin-layout">
@@ -213,11 +225,11 @@ function PatientDashboard() {
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav"><button type="button" aria-label="Hồ sơ người khám" title="Hồ sơ người khám" className={`sidebar-nav-item ${activeTab === 'patients' ? 'active' : ''}`} onClick={() => setActiveTab('patients')}><User size={18} /><span>Hồ sơ người khám</span></button>
           <div className="nav-section-title">DANH MỤC CÁ NHÂN</div>
 
           <button
-            onClick={() => setActiveTab('my-appointments')}
+            aria-label="Lịch hẹn của tôi" title="Lịch hẹn của tôi" onClick={() => setActiveTab('my-appointments')}
             className={`sidebar-nav-item ${activeTab === 'my-appointments' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -230,7 +242,7 @@ function PatientDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('booking')}
+            aria-label="Đặt lịch khám mới" title="Đặt lịch khám mới" onClick={() => setActiveTab('booking')}
             className={`sidebar-nav-item ${activeTab === 'booking' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -240,7 +252,7 @@ function PatientDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('profile')}
+            aria-label="Hồ sơ và đổi mật khẩu" title="Hồ sơ và đổi mật khẩu" onClick={() => setActiveTab('profile')}
             className={`sidebar-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -259,9 +271,9 @@ function PatientDashboard() {
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d2d2a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {userInfo.full_name}
             </div>
-            <div style={{ fontSize: '11px', color: '#8a8a70' }}>Bệnh nhân</div>
+            <div style={{ fontSize: '11px', color: '#62624d' }}>Bệnh nhân</div>
           </div>
-          <button onClick={handleLogout} title="Đăng xuất" style={{ background: 'none', border: 'none', color: '#8a8a70', cursor: 'pointer' }}>
+          <button onClick={handleLogout} title="Đăng xuất" style={{ background: 'none', border: 'none', color: '#62624d', cursor: 'pointer' }}>
             <LogOut size={16} />
           </button>
         </div>
@@ -276,7 +288,7 @@ function PatientDashboard() {
             {activeTab === 'profile' && ' Quản Lý Hồ Sơ Cá Nhân & Đổi Mật Khẩu'}
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions"><NotificationCenter />
             <button className="btn-secondary-natural" onClick={() => navigate('/')}>
               <Home size={16} /> Trang Chủ
             </button>
@@ -284,9 +296,12 @@ function PatientDashboard() {
         </header>
 
         <div className="admin-body">
+          {receipt && <AppointmentReceipt appointment={receipt} onClose={() => setReceipt(null)} />}
+          {activeTab === 'patients' && <PatientProfiles />}
           {dataLoading && <p role="status">Đang tải dữ liệu…</p>}
           {dataError && <p role="alert" className="clinic-feedback">{dataError} <button type="button" onClick={fetchData}>Thử lại</button></p>}
-          {activeTab === 'my-appointments' && <ClaimBooking onSuccess={fetchData} />}
+          {activeTab === 'my-appointments' && <label className="clinic-flex-wrap">Lịch hẹn<select aria-label="Nhóm lịch hẹn" value={appointmentGroup} onChange={e=>{setAppointmentGroup(e.target.value);setAptPage(1);}}><option value="upcoming">Sắp tới</option><option value="history">Lịch sử</option><option value="all">Tất cả</option></select></label>}
+          {activeTab === 'my-appointments' && <details className="natural-section-card"><summary>Thêm lịch đã đặt khi chưa đăng nhập</summary><ClaimBooking onSuccess={fetchData} /></details>}
           {/* TAB 1: LỊCH HẸN CỦA TÔI */}
           {activeTab === 'my-appointments' && (
             <div className="natural-section-card">
@@ -321,31 +336,22 @@ function PatientDashboard() {
                         </td>
                         <td>
                           <div style={{ fontWeight: '700', color: '#2d2d2a' }}>{formatDate(apt.appointment_date)}</div>
-                          <div style={{ fontSize: '12px', color: '#8a8a70', marginTop: '2px' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
+                          <div style={{ fontSize: '12px', color: '#62624d', marginTop: '2px' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                           <div style={{ marginTop: '4px' }}>
                             {getCountdownBadge(apt.appointment_date, apt.status)}
                           </div>
                         </td>
                         <td>{apt.symptoms}</td>
                         <td>
-                          <span className={`badge-status ${apt.status === 'completed' ? 'active' : apt.status === 'confirmed' ? 'active' : 'pending'}`}>
-                            {apt.status === 'completed' ? 'Khám xong' : apt.status === 'confirmed' ? 'Đã duyệt' : apt.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
-                          </span>
+                          <AppointmentStatus status={apt.status} />
                         </td>
                         <td>
                           {/* NÚT 1: HỦY PHIẾU NẾU DẠNG CHỜ DUYỆT */}
-                          {['pending', 'confirmed'].includes(apt.status) && new Date(`${apt.appointment_date}T${apt.time_slot.slice(0, 5)}:00+07:00`) > new Date() && (
-                            <button 
-                              onClick={() => handleCancelAppointment(apt.id)}
-                              style={{ background: 'none', border: 'none', color: '#b84343', cursor: 'pointer', fontSize: '13px' }}
-                            >
-                              Hủy Phiếu
-                            </button>
-                          )}
+                          <AppointmentTools appointment={apt} onUpdated={fetchData} />
 
                           {/* NÚT 2: XEM ĐƠN THUỐC & KẾT QUẢ NẾU ĐÃ KHÁM XONG */}
                           {apt.status === 'completed' && (
-                            <button 
+                            <button
                               onClick={() => handleOpenRecordModal(apt)}
                               className="btn-primary-natural"
                               style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
@@ -358,7 +364,7 @@ function PatientDashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: '#8a8a70' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: '#62624d' }}>
                         Bạn chưa đăng ký phiếu đặt lịch khám nào.
                       </td>
                     </tr>
@@ -370,15 +376,15 @@ function PatientDashboard() {
               {/* Thanh điều khiển phân trang */}
               {totalAptPages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
-                  <button 
+                  <button
                     disabled={aptPage === 1}
                     onClick={() => setAptPage(prev => Math.max(prev - 1, 1))}
-                    style={{ 
+                    style={{
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       width: '34px', height: '34px', borderRadius: '50%',
-                      border: '1px solid #e6e6df', 
-                      backgroundColor: aptPage === 1 ? '#f5f5f0' : '#ffffff', 
-                      color: aptPage === 1 ? '#cccccc' : '#5a5a40', 
+                      border: '1px solid #e6e6df',
+                      backgroundColor: aptPage === 1 ? '#f5f5f0' : '#ffffff',
+                      color: aptPage === 1 ? '#cccccc' : '#5a5a40',
                       cursor: aptPage === 1 ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease'
                     }}
@@ -405,15 +411,15 @@ function PatientDashboard() {
                     </button>
                   ))}
 
-                  <button 
+                  <button
                     disabled={aptPage === totalAptPages}
                     onClick={() => setAptPage(prev => Math.min(prev + 1, totalAptPages))}
-                    style={{ 
+                    style={{
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       width: '34px', height: '34px', borderRadius: '50%',
-                      border: '1px solid #e6e6df', 
-                      backgroundColor: aptPage === totalAptPages ? '#f5f5f0' : '#ffffff', 
-                      color: aptPage === totalAptPages ? '#cccccc' : '#5a5a40', 
+                      border: '1px solid #e6e6df',
+                      backgroundColor: aptPage === totalAptPages ? '#f5f5f0' : '#ffffff',
+                      color: aptPage === totalAptPages ? '#cccccc' : '#5a5a40',
                       cursor: aptPage === totalAptPages ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s ease'
                     }}
@@ -429,12 +435,13 @@ function PatientDashboard() {
           {activeTab === 'booking' && (
             <div className="natural-section-card" style={{ maxWidth: '720px', margin: '0 auto' }}>
               <h3 className="section-title-garamond" style={{ marginBottom: '6px' }}> Đăng Ký Khám Bệnh</h3>
-              <p style={{ fontSize: '13px', color: '#8a8a70', marginBottom: '24px' }}>
+              <p style={{ fontSize: '13px', color: '#62624d', marginBottom: '24px' }}>
                 Chọn chuyên khoa, bác sĩ và thời gian khám mong muốn. Phiếu hẹn sẽ được gửi đến hệ thống phòng khám.
               </p>
 
-              <form onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="clinic-flex-wrap"><label>Giới tính<select className="clinic-input" value={patientGender} onChange={e => setPatientGender(e.target.value)}><option>Nam</option><option>Nữ</option><option>Khác</option></select></label><label>Tuổi<input className="clinic-input" type="number" required min="0" max="130" value={patientAge} onChange={e => setPatientAge(e.target.value)} /></label></div>
+              <form className="clinic-booking-form" onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <ProfilePicker value={patientProfileId} onChange={setPatientProfileId} onSelect={profile => { setPatientName(profile.fullName); setPatientGender(profile.gender); const today=clinicToday(); setPatientAge(Number(today.slice(0,4))-Number(profile.birthDate.slice(0,4))-(today.slice(5)<profile.birthDate.slice(5)?1:0)); if(profile.phone)setPatientPhone(profile.phone); }} />
+                <div className="clinic-flex-wrap"><label>Giới tính<select className="clinic-input" required value={patientGender} onChange={e => setPatientGender(e.target.value)}><option value="">Chọn giới tính</option><option>Nam</option><option>Nữ</option><option>Khác</option></select></label><label>Tuổi<input className="clinic-input" type="number" required min="0" max="130" value={patientAge} onChange={e => setPatientAge(e.target.value)} /></label></div>
 
                 <div style={{ backgroundColor: '#fdfbf7', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', color: '#5a5a40', textTransform: 'uppercase' }}>
@@ -442,15 +449,15 @@ function PatientDashboard() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '600' }}>Họ và tên *</label>
-                      <input 
+                      <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-1">Họ và tên *</label>
+                      <input id="patientdashboard-field-1"
                         type="text" required value={patientName} onChange={(e) => setPatientName(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '600' }}>Số điện thoại *</label>
-                      <input 
+                      <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-2">Số điện thoại *</label>
+                      <input id="patientdashboard-field-2"
                         type="text" required placeholder="0912 xxx xxx" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       />
@@ -464,8 +471,8 @@ function PatientDashboard() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '600' }}>Chuyên khoa</label>
-                      <select 
+                      <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-3">Chuyên khoa</label>
+                      <select id="patientdashboard-field-3"
                         value={specialtyId} onChange={(e) => handleSpecialtyChange(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       >
@@ -474,8 +481,8 @@ function PatientDashboard() {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '600' }}>Bác sĩ khám</label>
-                      <select 
+                      <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-4">Bác sĩ khám</label>
+                      <select id="patientdashboard-field-4"
                         value={doctorId} onChange={(e) => setDoctorId(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       >
@@ -490,8 +497,8 @@ function PatientDashboard() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '600' }}>Ngày khám</label>
-                      <input 
+                      <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-5">Ngày khám</label>
+                      <input id="patientdashboard-field-5"
                         type="date" required min={clinicToday()} value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       />
@@ -518,8 +525,8 @@ function PatientDashboard() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '600' }}>Triệu chứng / Lý do khám</label>
-                  <textarea 
+                  <label style={{ fontSize: '12px', fontWeight: '600' }} htmlFor="patientdashboard-field-6">Triệu chứng / Lý do khám</label>
+                  <textarea id="patientdashboard-field-6"
                     rows={3} placeholder="Mô tả sơ qua các dấu hiệu mệt mỏi, đau nhức..."
                     value={symptoms} onChange={(e) => setSymptoms(e.target.value)}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontFamily: 'inherit' }}
@@ -558,14 +565,14 @@ function PatientDashboard() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'serif' }}>
+                <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-ui)' }}>
                    KẾT QUẢ KHÁM BỆNH & ĐƠN THUỐC
                 </div>
                 <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
                   Mã phiếu: LH-{selectedRecord.appointment.id} • Ngày khám: {selectedRecord.appointment.appointment_date}
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowRecordModal(false)}
                 style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '4px' }}
               >
@@ -575,17 +582,17 @@ function PatientDashboard() {
 
             {/* Content Body Modal */}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '75vh', overflowY: 'auto' }}>
-              
+
               {/* Thẻ Bác sĩ & Chuyên Khoa */}
               <div style={{ backgroundColor: '#fdfbf7', padding: '14px 18px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#8a8a70', textTransform: 'uppercase', fontWeight: '700' }}>Bác sĩ khám</div>
+                  <div style={{ fontSize: '11px', color: '#62624d', textTransform: 'uppercase', fontWeight: '700' }}>Bác sĩ khám</div>
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#2d2d2a', marginTop: '2px' }}>
                     {selectedRecord.appointment.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa'}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', color: '#8a8a70', textTransform: 'uppercase', fontWeight: '700' }}>Chuyên khoa</div>
+                  <div style={{ fontSize: '11px', color: '#62624d', textTransform: 'uppercase', fontWeight: '700' }}>Chuyên khoa</div>
                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#5a5a40', marginTop: '2px' }}>
                     {selectedRecord.appointment.Specialty?.name || 'Đa khoa'}
                   </div>
@@ -617,14 +624,14 @@ function PatientDashboard() {
                   {/* 3. LỜI KHUYÊN & NGÀY TÁI KHÁM */}
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                     <div>
-                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px' }}>Lời khuyên & Dặn dò</div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#62624d', marginBottom: '4px' }}>Lời khuyên & Dặn dò</div>
                       <div style={{ fontSize: '13px', color: '#2d2d2a', fontStyle: 'italic' }}>
-                        "{selectedRecord.medicalRecord.advice || 'Nghỉ ngơi và uống đủ nước ấm.'}"
+                        "{selectedRecord.medicalRecord.advice || 'Không có lời dặn được ghi nhận.'}"
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#62624d', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Calendar size={13} /> Ngày đề nghị tái khám (chưa đặt lịch)
                       </div>
                       <div style={{ fontSize: '13px', fontWeight: '700', color: '#b84343' }}>
@@ -634,7 +641,7 @@ function PatientDashboard() {
                   </div>
                 </>
               ) : (
-                <div style={{ textAlign: 'center', padding: '30px', color: '#8a8a70' }}>
+                <div style={{ textAlign: 'center', padding: '30px', color: '#62624d' }}>
                   Phiếu hẹn đã hoàn thành nhưng chưa có chi tiết đơn thuốc được ghi nhận.
                 </div>
               )}
@@ -643,7 +650,7 @@ function PatientDashboard() {
 
             {/* Footer Modal */}
             <div style={{ backgroundColor: '#fdfbf7', padding: '16px 24px', borderTop: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button 
+              <button
                 onClick={() => printPrescription(selectedRecord.appointment, selectedRecord.medicalRecord)}
                 className="btn-primary-natural"
                 style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}

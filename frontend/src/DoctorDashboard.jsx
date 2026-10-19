@@ -1,3 +1,7 @@
+import RecordWorkspace from './components/RecordWorkspace';
+import NotificationCenter from './components/NotificationCenter';
+import AppointmentStatus from './components/AppointmentStatus';
+import useUrlState from './hooks/useUrlState';
 import RecordAudit from './components/RecordAudit';
 import ScheduleEditor from './components/ScheduleEditor';
 import PrescriptionEditor from './components/PrescriptionEditor';
@@ -7,15 +11,15 @@ import { printPrescription } from './utils/printHelper';
 import api from './api';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Stethoscope, 
-  CalendarDays, 
-  CheckCircle2, 
-  User, 
-  LogOut, 
-  Home, 
-  FileText, 
-  Pill, 
+import {
+  Stethoscope,
+  CalendarDays,
+  CheckCircle2,
+  User,
+  LogOut,
+  Home,
+  FileText,
+  Pill,
   Search,
   Printer
 } from 'lucide-react';
@@ -26,7 +30,7 @@ function DoctorDashboard() {
   const navigate = useNavigate();
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
-  const [activeTab, setActiveTab] = useState('appointments');
+  const [activeTab, setActiveTab] = useUrlState('tab', 'appointments');
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : { id: 0, full_name: 'Bác Sĩ', email: '' };
@@ -41,7 +45,8 @@ function DoctorDashboard() {
   const [advice, setAdvice] = useState('');
   const [reVisitDate, setReVisitDate] = useState('');
   const [saving, setSaving] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useUrlState('q', '');
+  const [dateFilter, setDateFilter] = useUrlState('date', clinicToday());
 
   // State phân trang cho danh sách ca khám
   const [pendingPage, setPendingPage] = useState(1);
@@ -69,7 +74,8 @@ function DoctorDashboard() {
 
   useEffect(() => {
     document.title = "MyClinic - Dashboard Bác Sĩ Khám Bệnh";
-    fetchData();
+    fetchData(); const timer=setInterval(fetchData,30000); window.addEventListener('focus',fetchData);
+    return () => {clearInterval(timer);window.removeEventListener('focus',fetchData);};
   }, [fetchData]);
 
   const handleOpenExamination = (apt) => {
@@ -100,6 +106,7 @@ function DoctorDashboard() {
     try {
       await api.post('/medical-records', {
         appointmentId: selectedAppointment.id,
+        version: selectedAppointment.MedicalRecord?.version || 0,
         patientId: selectedAppointment.userId,
         doctorId: doctorInfo.id,
         diagnosis,
@@ -126,12 +133,13 @@ function DoctorDashboard() {
   };
 
   const filteredAppointments = appointments.filter(a => {
+    if (dateFilter && a.appointment_date !== dateFilter) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return a.patient_name.toLowerCase().includes(q) || a.patient_phone.includes(q);
   });
 
-  const pendingList = filteredAppointments.filter(a => a.status === 'confirmed');
+  const pendingList = filteredAppointments.filter(a => ['confirmed','arrived','in_progress'].includes(a.status));
   const completedList = filteredAppointments.filter(a => a.status === 'completed');
 
   // chuyển về trang đầu tiên khi tìm kiếm
@@ -165,7 +173,7 @@ function DoctorDashboard() {
           <div className="nav-section-title">DANH MỤC LÀM VIỆC</div>
 
           <button
-            onClick={() => setActiveTab('appointments')}
+            aria-label="Danh sách ca khám" title="Danh sách ca khám" onClick={() => setActiveTab('appointments')}
             className={`sidebar-nav-item ${activeTab === 'appointments' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -178,7 +186,7 @@ function DoctorDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('completed')}
+            aria-label="Lịch sử đã khám" title="Lịch sử đã khám" onClick={() => setActiveTab('completed')}
             className={`sidebar-nav-item ${activeTab === 'completed' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -188,7 +196,7 @@ function DoctorDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('profile')}
+            aria-label="Hồ sơ và đổi mật khẩu" title="Hồ sơ và đổi mật khẩu" onClick={() => setActiveTab('profile')}
             className={`sidebar-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
           >
             <div className="nav-item-content">
@@ -201,10 +209,10 @@ function DoctorDashboard() {
         <div className="sidebar-footer">
           <div className="user-avatar" style={{ overflow: 'hidden', padding: 0 }}>
             {doctorInfo?.image ? (
-              <img 
-                src={doctorInfo.image} 
-                alt={user.full_name} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              <img
+                src={doctorInfo.image}
+                alt={user.full_name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
               user.full_name ? user.full_name.charAt(0).toUpperCase() : 'B'
@@ -214,11 +222,11 @@ function DoctorDashboard() {
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#2d2d2a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {doctorInfo ? `${doctorInfo.degree} ${user.full_name}` : user.full_name}
             </div>
-            <div style={{ fontSize: '11px', color: '#8a8a70' }}>
+            <div style={{ fontSize: '11px', color: '#62624d' }}>
               {doctorInfo?.Specialty?.name || 'Bác sĩ chuyên khoa'}
             </div>
           </div>
-          <button onClick={handleLogout} title="Đăng xuất" style={{ background: 'none', border: 'none', color: '#8a8a70', cursor: 'pointer' }}>
+          <button onClick={handleLogout} title="Đăng xuất" style={{ background: 'none', border: 'none', color: '#62624d', cursor: 'pointer' }}>
             <LogOut size={16} />
           </button>
         </div>
@@ -233,7 +241,7 @@ function DoctorDashboard() {
             {activeTab === 'profile' && ' Quản Lý Hồ Sơ Cá Nhân & Đổi Mật Khẩu'}
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions"><NotificationCenter />
             <button className="btn-secondary-natural" onClick={() => navigate('/')}>
               <Home size={16} /> Trang Chủ
             </button>
@@ -241,14 +249,16 @@ function DoctorDashboard() {
         </header>
 
         <div className="admin-body">
+          {activeTab === 'examination' && !selectedAppointment && <p>Chọn ca khám trong danh sách để tiếp tục. <button onClick={() => setActiveTab('appointments')}>Mở danh sách</button></p>}
+          {activeTab !== 'profile' && activeTab !== 'examination' && <div className="clinic-flex-wrap"><label>Ngày khám<input className="clinic-input" type="date" value={dateFilter} onChange={e => {setDateFilter(e.target.value);setPendingPage(1);setCompletedPage(1);}} /></label><button onClick={() => setDateFilter(clinicToday())}>Hôm nay</button><button onClick={() => setDateFilter('')}>Tất cả ngày</button></div>}
           {dataLoading && <p role="status">Đang tải dữ liệu…</p>}
           {dataError && <p role="alert" className="clinic-feedback">{dataError} <button type="button" onClick={fetchData}>Thử lại</button></p>}
           {activeTab === 'appointments' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Search size={18} color="#8a8a70" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Tìm theo tên bệnh nhân hoặc số điện thoại..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -283,17 +293,16 @@ function DoctorDashboard() {
                           <td>{apt.patient_phone}</td>
                           <td>
                             <div style={{ fontWeight: '600' }}>{formatDate(apt.appointment_date)}</div>
-                            <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
+                            <div style={{ fontSize: '12px', color: '#62624d' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                           </td>
                           <td style={{ color: '#5a5a40', fontStyle: 'italic' }}>"{apt.symptoms}"</td>
                           <td>
-                            <span className={`badge-status ${apt.status === 'confirmed' ? 'active' : 'pending'}`}>
-                              {apt.status === 'confirmed' ? 'Đã duyệt' : 'Chờ duyệt'}
-                            </span>
+                            <AppointmentStatus status={apt.status} />
                           </td>
                           <td>
-                            <button 
-                              onClick={() => handleOpenExamination(apt)}
+                            {apt.status === 'confirmed' && <button type="button" onClick={async()=>{try{await api.put(`/appointments/${apt.id}/status`,{status:'arrived'});await fetchData();}catch(error){toast.error(error.response?.data?.message||'Không tiếp nhận được.');}}}>Tiếp nhận</button>}
+                            <button
+                              onClick={async () => { if(apt.status === 'arrived'){try{await api.put(`/appointments/${apt.id}/status`,{status:'in_progress'});await fetchData();}catch(error){toast.error(error.response?.data?.message||'Không bắt đầu được ca khám.');return;}} handleOpenExamination(apt); }}
                               className="btn-primary-natural"
                               style={{ padding: '6px 14px', fontSize: '12px' }}
                             >
@@ -304,27 +313,27 @@ function DoctorDashboard() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#8a8a70' }}>
+                        <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#62624d' }}>
                           Hiện tại chưa có bệnh nhân nào trong danh sách khám chờ.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-               </div>  
+               </div>
 
                 {/* Thanh phân trang ca khám chờ */}
-                {totalPendingPages > 1 && ( 
+                {totalPendingPages > 1 && (
                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
-                   <button 
+                   <button
                      disabled={pendingPage === 1}
                      onClick={() => setPendingPage(prev => Math.max(prev - 1, 1))}
-                     style={{ 
+                     style={{
                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                        width: '34px', height: '34px', borderRadius: '50%',
-                       border: '1px solid #e6e6df', 
-                       backgroundColor: pendingPage === 1 ? '#f5f5f0' : '#ffffff', 
-                       color: pendingPage === 1 ? '#cccccc' : '#5a5a40', 
+                       border: '1px solid #e6e6df',
+                       backgroundColor: pendingPage === 1 ? '#f5f5f0' : '#ffffff',
+                       color: pendingPage === 1 ? '#cccccc' : '#5a5a40',
                        cursor: pendingPage === 1 ? 'not-allowed' : 'pointer',
                        transition: 'all 0.2s ease'
                      }}
@@ -351,15 +360,15 @@ function DoctorDashboard() {
                      </button>
                    ))}
 
-                   <button 
+                   <button
                      disabled={pendingPage === totalPendingPages}
                      onClick={() => setPendingPage(prev => Math.min(prev + 1, totalPendingPages))}
-                     style={{ 
+                     style={{
                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                        width: '34px', height: '34px', borderRadius: '50%',
-                       border: '1px solid #e6e6df', 
-                       backgroundColor: pendingPage === totalPendingPages ? '#f5f5f0' : '#ffffff', 
-                       color: pendingPage === totalPendingPages ? '#cccccc' : '#5a5a40', 
+                       border: '1px solid #e6e6df',
+                       backgroundColor: pendingPage === totalPendingPages ? '#f5f5f0' : '#ffffff',
+                       color: pendingPage === totalPendingPages ? '#cccccc' : '#5a5a40',
                        cursor: pendingPage === totalPendingPages ? 'not-allowed' : 'pointer',
                        transition: 'all 0.2s ease'
                      }}
@@ -379,7 +388,7 @@ function DoctorDashboard() {
                   <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#5a5a40' }}>
                     Bệnh Nhân: {selectedAppointment.patient_name}
                   </h3>
-                  <div style={{ fontSize: '13px', color: '#8a8a70', marginTop: '4px' }}>
+                  <div style={{ fontSize: '13px', color: '#62624d', marginTop: '4px' }}>
                     SĐT: {selectedAppointment.patient_phone} • {selectedAppointment.patient_gender} • {selectedAppointment.patient_age} tuổi
                   </div>
                 </div>
@@ -390,12 +399,13 @@ function DoctorDashboard() {
 
               <form onSubmit={handleSaveMedicalRecord} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {selectedAppointment.MedicalRecord && <RecordAudit recordId={selectedAppointment.MedicalRecord.id} />}
+                <RecordWorkspace key={selectedAppointment.id} appointment={selectedAppointment} data={{diagnosis,prescription,prescriptionItems,advice,re_visit_date:reVisitDate}} onRestore={draft=>{setDiagnosis(draft.diagnosis||'');setPrescription(draft.prescription||'');setPrescriptionItems(draft.prescriptionItems||[]);setAdvice(draft.advice||'');setReVisitDate(draft.re_visit_date||'');}} />
                 <PrescriptionEditor items={prescriptionItems} onChange={setPrescriptionItems} />
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }} htmlFor="doctordashboard-field-1">
                     <FileText size={16} color="#5a5a40" /> Chẩn Đoán Bệnh Của Bác Sĩ *
                   </label>
-                  <textarea 
+                  <textarea id="doctordashboard-field-1"
                     rows={3} required
                     placeholder="Nhập chi tiết chẩn đoán lâm sàng..."
                     value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)}
@@ -404,10 +414,10 @@ function DoctorDashboard() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }} htmlFor="doctordashboard-field-2">
                     <Pill size={16} color="#5a5a40" /> Ghi chú đơn thuốc (dùng khi chưa có thuốc theo dòng)
                   </label>
-                  <textarea 
+                  <textarea id="doctordashboard-field-2"
                     rows={4}
                     placeholder="Kê danh sách thuốc..."
                     value={prescription} onChange={(e) => setPrescription(e.target.value)}
@@ -417,20 +427,20 @@ function DoctorDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                   <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', marginBottom: '6px', display: 'block' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', marginBottom: '6px', display: 'block' }} htmlFor="doctordashboard-field-3">
                       Lời Khuyên & Dặn Dò
                     </label>
-                    <input 
+                    <input id="doctordashboard-field-3"
                       type="text" placeholder="Dặn dò sinh hoạt..."
                       value={advice} onChange={(e) => setAdvice(e.target.value)}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none', fontSize: '13px' }}
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', marginBottom: '6px', display: 'block' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', marginBottom: '6px', display: 'block' }} htmlFor="doctordashboard-field-4">
                       Ngày đề nghị tái khám (chưa đặt lịch)
                     </label>
-                    <input 
+                    <input id="doctordashboard-field-4"
                       type="date" min={selectedAppointment.MedicalRecord?.re_visit_date || clinicToday()}
                       value={reVisitDate} onChange={(e) => setReVisitDate(e.target.value)}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none', fontSize: '13px' }}
@@ -443,7 +453,7 @@ function DoctorDashboard() {
                     Hủy Bỏ
                   </button>
                   <button type="submit" className="btn-primary-natural" disabled={saving}>
-                    {saving ? 'Đang Lưu...' : 'Lưu Hồ Sơ & Hoàn Thành Ca Khám'}
+                    {saving ? 'Đang lưu…' : selectedAppointment.MedicalRecord ? 'Lưu chỉnh sửa bệnh án' : 'Lưu kết quả và hoàn thành khám'}
                   </button>
                 </div>
               </form>
@@ -486,7 +496,7 @@ function DoctorDashboard() {
                           <span className="badge-status active" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>Khám xong</span>
                         </td>
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <button 
+                          <button
                             onClick={() => printPrescription(apt, apt.MedicalRecord)}
                             className="btn-primary-natural"
                             style={{ padding: '6px 14px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
@@ -498,7 +508,7 @@ function DoctorDashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#8a8a70' }}>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#62624d' }}>
                         Chưa có lịch sử ca khám nào hoàn thành.
                       </td>
                     </tr>

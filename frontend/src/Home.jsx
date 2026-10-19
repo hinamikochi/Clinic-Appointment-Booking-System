@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import BookingModal from './BookingModal';
-import { 
-  CalendarCheck, 
-  Stethoscope, 
-  Building2, 
-  ShieldCheck, 
-  Clock, 
-  Award, 
-  UserCheck,
+import {
+  CalendarCheck,
+  Stethoscope,
+  Building2,
+  ShieldCheck,
+  Clock,
+  Award,
   ChevronRight,
-  ChevronLeft,
-  Sparkles
-} from 'lucide-react';
+  ChevronLeft} from 'lucide-react';
 
 function Home() {
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -21,6 +18,12 @@ function Home() {
 
   const [specialties, setSpecialties] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const filteredSpecs = specialties.filter(item => (item.name + ' ' + (item.description || '')).toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')));
+  const filteredDocs = doctors.filter(item => ((item.User?.full_name || '') + ' ' + (item.Specialty?.name || '') + ' ' + (item.description || '')).toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')));
 
   // Phân trang chuyên khoa và bác sĩ
   const [specPage, setSpecPage] = useState(1);
@@ -29,14 +32,14 @@ function Home() {
   const [docPage, setDocPage] = useState(1);
   const itemsPerPageDoc = 6;
 
-  const totalSpecPages = Math.ceil(specialties.length / itemsPerPageSpec) || 1;
-  const paginatedSpecialties = specialties.slice(
+  const totalSpecPages = Math.ceil(filteredSpecs.length / itemsPerPageSpec) || 1;
+  const paginatedSpecialties = filteredSpecs.slice(
     (specPage - 1) * itemsPerPageSpec,
     specPage * itemsPerPageSpec
   );
 
-  const totalDocPages = Math.ceil(doctors.length / itemsPerPageDoc) || 1;
-  const paginatedDoctors = doctors.slice(
+  const totalDocPages = Math.ceil(filteredDocs.length / itemsPerPageDoc) || 1;
+  const paginatedDoctors = filteredDocs.slice(
     (docPage - 1) * itemsPerPageDoc,
     docPage * itemsPerPageDoc
   );
@@ -45,18 +48,19 @@ function Home() {
   useEffect(() => {
     document.title = "MyClinic - Trang Chủ Đặt Lịch Khám";
     const fetchData = async () => {
+      setLoading(true); setLoadError('');
       try {
         const resSpecs = await api.get('/specialties');
         setSpecialties(resSpecs.data);
 
         const resDocs = await api.get('/doctors');
         setDoctors(resDocs.data);
-      } catch (err) {
-        console.error("Lỗi nạp dữ liệu trang chủ:", err);
-      }
+      } catch {
+        setLoadError('Không tải được danh sách khám. Vui lòng thử lại.');
+      } finally { setLoading(false); }
     };
     fetchData();
-  }, []);
+  }, [retry]);
 
   // Mở Modal chung
   const handleOpenGeneralBooking = () => {
@@ -73,46 +77,47 @@ function Home() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
-      
+    <div className="clinic-home" style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+      <div className="clinic-public-search"><label>Tìm bác sĩ hoặc chuyên khoa<input className="clinic-input" type="search" placeholder="Nhập tên bác sĩ, chuyên khoa hoặc nhu cầu khám" value={search} onChange={e => { setSearch(e.target.value); setSpecPage(1); setDocPage(1); }} /></label>{loading && <p role="status">Đang tải danh sách…</p>}{loadError && <p role="alert">{loadError} <button onClick={() => setRetry(n => n + 1)}>Thử lại</button></p>}</div>
+
       {/* 1. HERO BANNER SECTION */}
-      <section style={{ 
-        textAlign: 'center', 
-        color: '#ffffff', 
+      <section style={{
+        textAlign: 'center',
+        color: '#ffffff',
         padding: '120px 20px 80px 20px',
         maxWidth: '1200px',
         margin: '0 auto'
       }}>
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '8px', 
-          backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(10px)',
-          padding: '8px 20px', 
+          padding: '8px 20px',
           borderRadius: '99px',
           fontSize: '13px',
           fontWeight: '600',
           marginBottom: '24px',
           border: '1px solid rgba(255, 255, 255, 0.3)'
         }}>
-          Hệ Thống Y Tế Chất Lượng Cao 
+          Hệ Thống Y Tế Chất Lượng Cao
         </div>
 
-        <h1 style={{ 
-          fontSize: '3.6rem', 
+        <h1 style={{
+          fontSize: '3.6rem',
           textShadow: '0 4px 12px rgba(0,0,0,0.5)',
           marginBottom: '20px',
           fontWeight: '800',
-          fontFamily: 'serif',
+          fontFamily: 'var(--font-ui)',
           lineHeight: '1.2'
         }}>
-          Chăm Sóc Sức Khỏe Toàn Diện <br /> 
-          <span style={{ color: '#e2f0d9', fontStyle: 'italic', fontWeight: '400' }}>Đặt Lịch Nhanh Chóng - Không Chờ Đợi</span>
+          Chăm Sóc Sức Khỏe Toàn Diện <br />
+          <span style={{ color: '#e2f0d9', fontStyle: 'italic', fontWeight: '400' }}>Đặt Lịch Nhanh Chóng - Giảm Thời Gian Chờ</span>
         </h1>
 
-        <p style={{ 
-          fontSize: '1.25rem', 
+        <p style={{
+          fontSize: '1.25rem',
           textShadow: '0 2px 6px rgba(0,0,0,0.5)',
           marginBottom: '40px',
           maxWidth: '750px',
@@ -122,8 +127,8 @@ function Home() {
         }}>
           Kết nối trực tiếp với đội ngũ Giáo sư, Bác sĩ hàng đầu. Đăng ký khám chuyên khoa trực tuyến dễ dàng, tiết kiệm thời gian chờ đợi tại phòng khám.
         </p>
-        
-        <button 
+
+        <button
           onClick={handleOpenGeneralBooking}
           className="btn-primary-natural"
           style={{
@@ -140,20 +145,20 @@ function Home() {
         </button>
 
         {/* 3 THẺ NỔI BẬT NHANH */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '20px', 
-          marginTop: '60px' 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '20px',
+          marginTop: '60px'
         }}>
-          {/* Thẻ 1: Không Chờ Đợi */}
-          <div 
-            style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-              backdropFilter: 'blur(12px)', 
-              padding: '24px', 
-              borderRadius: '20px', 
-              border: '1px solid rgba(255, 255, 255, 0.25)', 
+          {/* Thẻ 1: Giảm Thời Gian Chờ */}
+          <div
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(12px)',
+              padding: '24px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               textAlign: 'left',
               transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
             }}
@@ -169,18 +174,18 @@ function Home() {
             }}
           >
             <Clock size={32} color="#ffe082" style={{ marginBottom: '12px' }} />
-            <h4 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700' }}>Không Chờ Đợi</h4>
-            <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, lineHeight: '1.5' }}>Đến khám đúng khung giờ đã hẹn, không phải xếp hàng chờ đợi lâu.</p>
+            <h4 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700' }}>Giảm Thời Gian Chờ</h4>
+            <p style={{ margin: 0, fontSize: '13px', opacity: 0.9, lineHeight: '1.5' }}>Đến khám đúng khung giờ đã hẹn, được hướng dẫn tiếp nhận theo lịch hẹn.</p>
           </div>
 
           {/* Thẻ 2: Bác Sĩ Đầu Ngành */}
-          <div 
-            style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-              backdropFilter: 'blur(12px)', 
-              padding: '24px', 
-              borderRadius: '20px', 
-              border: '1px solid rgba(255, 255, 255, 0.25)', 
+          <div
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(12px)',
+              padding: '24px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               textAlign: 'left',
               transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
             }}
@@ -201,13 +206,13 @@ function Home() {
           </div>
 
           {/* Thẻ 3: Bệnh Án Điện Tử */}
-          <div 
-            style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-              backdropFilter: 'blur(12px)', 
-              padding: '24px', 
-              borderRadius: '20px', 
-              border: '1px solid rgba(255, 255, 255, 0.25)', 
+          <div
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(12px)',
+              padding: '24px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               textAlign: 'left',
               transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, backgroundColor 0.3s ease'
             }}
@@ -243,7 +248,7 @@ function Home() {
             <div style={{ fontSize: '12px', fontWeight: '700', color: '#ffe082', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '6px' }}>
               QUY TRÌNH TIỆN LỢI & NHANH CHÓNG
             </div>
-            <h3 style={{ fontFamily: 'serif', fontSize: '26px', fontWeight: '700', color: '#ffffff', margin: 0 }}>
+            <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: '700', color: '#ffffff', margin: 0 }}>
               4 Bước Đặt Lịch Khám Bệnh Trực Tuyến
             </h3>
           </div>
@@ -254,7 +259,7 @@ function Home() {
             gap: '20px'
           }}>
             {/* BƯỚC 1 */}
-            <div 
+            <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(12px)',
@@ -291,7 +296,7 @@ function Home() {
             </div>
 
             {/* BƯỚC 2 */}
-            <div 
+            <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(12px)',
@@ -328,7 +333,7 @@ function Home() {
             </div>
 
             {/* BƯỚC 3 */}
-            <div 
+            <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(12px)',
@@ -360,12 +365,12 @@ function Home() {
                 Xác Nhận Phiếu Hẹn
               </h4>
               <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
-                Phòng khám lưu phiếu hẹn và thông báo nhắc lịch tự động.
+                Phòng khám xác nhận yêu cầu. Theo dõi phiếu hẹn và thông báo trong tài khoản.
               </p>
             </div>
 
             {/* BƯỚC 4 */}
-            <div 
+            <div
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(12px)',
@@ -397,7 +402,7 @@ function Home() {
                 Khám & Nhận Đơn Thuốc
               </h4>
               <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', margin: 0, lineHeight: '1.5' }}>
-                Thăm khám không phải xếp hàng và xem đơn thuốc PDF trực tuyến.
+                Đến làm thủ tục tiếp nhận theo giờ hẹn, xem kết quả và in đơn thuốc sau khám.
               </p>
             </div>
           </div>
@@ -411,7 +416,7 @@ function Home() {
               <div style={{ fontSize: '12px', fontWeight: '700', color: '#5a5a40', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 DANH MỤC KHÁM BỆNH
               </div>
-              <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#2d2d2a', fontFamily: 'serif', margin: '4px 0 0 0' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#2d2d2a', fontFamily: 'var(--font-ui)', margin: '4px 0 0 0' }}>
                  Các Chuyên Khoa Y Tế
               </h2>
             </div>
@@ -421,7 +426,7 @@ function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
             {paginatedSpecialties.length > 0 ? (
               paginatedSpecialties.map((spec) => (
-                <div 
+                <div
                   key={spec.id}
                   style={{
                     backgroundColor: '#fdfbf7', padding: '24px', borderRadius: '20px', border: '1px solid #e6e6df',
@@ -429,7 +434,9 @@ function Home() {
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-                  onClick={handleOpenGeneralBooking}
+                  role="button" tabIndex={0}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDoctorId(null); setSelectedSpecialtyId(spec.id); setShowBookingModal(true); } }}
+                  onClick={() => { setSelectedDoctorId(null); setSelectedSpecialtyId(spec.id); setShowBookingModal(true); }}
                 >
                   <div style={{ width: '48px', height: '48px', borderRadius: '16px', backgroundColor: '#e2f0d9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#2e6f40' }}>
                     <Building2 size={24} />
@@ -441,22 +448,22 @@ function Home() {
                 </div>
               ))
             ) : (
-              <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>Đang nạp danh sách chuyên khoa...</div>
+              <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>{loading ? 'Đang tải chuyên khoa…' : loadError ? 'Chưa tải được chuyên khoa.' : 'Không có chuyên khoa phù hợp.'}</div>
             )}
           </div>
 
           {/* Thanh phân trang chuyên khoa */}
           {totalSpecPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '28px' }}>
-              <button 
+              <button
                 disabled={specPage === 1}
                 onClick={() => setSpecPage(prev => Math.max(prev - 1, 1))}
-                style={{ 
+                style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: '36px', height: '36px', borderRadius: '50%',
-                  border: '1px solid #e6e6df', 
-                  backgroundColor: specPage === 1 ? '#f5f5f0' : '#ffffff', 
-                  color: specPage === 1 ? '#cccccc' : '#5a5a40', 
+                  border: '1px solid #e6e6df',
+                  backgroundColor: specPage === 1 ? '#f5f5f0' : '#ffffff',
+                  color: specPage === 1 ? '#cccccc' : '#5a5a40',
                   cursor: specPage === 1 ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: specPage === 1 ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
@@ -485,15 +492,15 @@ function Home() {
                 </button>
               ))}
 
-              <button 
+              <button
                 disabled={specPage === totalSpecPages}
                 onClick={() => setSpecPage(prev => Math.min(prev + 1, totalSpecPages))}
-                style={{ 
+                style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: '36px', height: '36px', borderRadius: '50%',
-                  border: '1px solid #e6e6df', 
-                  backgroundColor: specPage === totalSpecPages ? '#f5f5f0' : '#ffffff', 
-                  color: specPage === totalSpecPages ? '#cccccc' : '#5a5a40', 
+                  border: '1px solid #e6e6df',
+                  backgroundColor: specPage === totalSpecPages ? '#f5f5f0' : '#ffffff',
+                  color: specPage === totalSpecPages ? '#cccccc' : '#5a5a40',
                   cursor: specPage === totalSpecPages ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: specPage === totalSpecPages ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
@@ -514,7 +521,7 @@ function Home() {
             <div style={{ fontSize: '12px', fontWeight: '700', color: '#5a5a40', textTransform: 'uppercase', letterSpacing: '1px' }}>
               ĐỘI NGŨ CHUYÊN GIA
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#2d2d2a', fontFamily: 'serif', margin: '4px 0 0 0' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#2d2d2a', fontFamily: 'var(--font-ui)', margin: '4px 0 0 0' }}>
               Bác Sĩ Của Phòng Khám
             </h2>
           </div>
@@ -522,15 +529,15 @@ function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
             {paginatedDoctors.length > 0 ? (
               paginatedDoctors.map((doc) => (
-                <div 
+                <div
                   key={doc.id}
                   style={{
-                    backgroundColor: '#ffffff', 
-                    padding: '24px', 
-                    borderRadius: '24px', 
+                    backgroundColor: '#ffffff',
+                    padding: '24px',
+                    borderRadius: '24px',
                     border: '1px solid #e6e6df',
-                    display: 'flex', 
-                    flexDirection: 'column', 
+                    display: 'flex',
+                    flexDirection: 'column',
                     justify: 'space-between',
                     boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
                     transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), boxShadow 0.3s ease, border-color 0.3s ease'
@@ -550,28 +557,28 @@ function Home() {
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
                       {/* Hiển thị Ảnh đại diện Bác sĩ */}
                       {doc.image ? (
-                        <img 
-                          src={doc.image} 
-                          alt={doc.User?.full_name} 
-                          style={{ 
-                            width: '64px', 
-                            height: '64px', 
-                            borderRadius: '50%', 
+                        <img
+                          src={doc.image}
+                          alt={doc.User?.full_name}
+                          style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
                             objectFit: 'cover',
                             border: '2px solid #e6e6df'
-                          }} 
+                          }}
                         />
                       ) : (
-                        <div style={{ 
-                          width: '64px', 
-                          height: '64px', 
-                          borderRadius: '50%', 
-                          backgroundColor: '#5a5a40', 
+                        <div style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '50%',
+                          backgroundColor: '#5a5a40',
                           color: '#ffffff',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          fontSize: '24px', 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '24px',
                           fontWeight: '700'
                         }}>
                           {doc.User?.full_name ? doc.User.full_name.charAt(0).toUpperCase() : 'B'}
@@ -601,7 +608,7 @@ function Home() {
                       </span>
                     </div>
 
-                  <button 
+                  <button
                     onClick={() => handleBookSpecificDoctor(doc)}
                     className="btn-primary-natural"
                     style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '13px' }}
@@ -611,22 +618,22 @@ function Home() {
                 </div>
               ))
             ) : (
-              <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>Đang nạp danh sách bác sĩ...</div>
+              <div style={{ color: '#8a8a70', gridColumn: '1/-1', textAlign: 'center', padding: '20px' }}>{loading ? 'Đang tải bác sĩ…' : loadError ? 'Chưa tải được bác sĩ.' : 'Không có bác sĩ phù hợp.'}</div>
             )}
           </div>
 
           {/* Thanh phân trang bác sĩ */}
           {totalDocPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '28px' }}>
-              <button 
+              <button
                 disabled={docPage === 1}
                 onClick={() => setDocPage(prev => Math.max(prev - 1, 1))}
-                style={{ 
+                style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: '36px', height: '36px', borderRadius: '50%',
-                  border: '1px solid #e6e6df', 
-                  backgroundColor: docPage === 1 ? '#f5f5f0' : '#ffffff', 
-                  color: docPage === 1 ? '#cccccc' : '#5a5a40', 
+                  border: '1px solid #e6e6df',
+                  backgroundColor: docPage === 1 ? '#f5f5f0' : '#ffffff',
+                  color: docPage === 1 ? '#cccccc' : '#5a5a40',
                   cursor: docPage === 1 ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: docPage === 1 ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
@@ -655,15 +662,15 @@ function Home() {
                 </button>
               ))}
 
-              <button 
+              <button
                 disabled={docPage === totalDocPages}
                 onClick={() => setDocPage(prev => Math.min(prev + 1, totalDocPages))}
-                style={{ 
+                style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: '36px', height: '36px', borderRadius: '50%',
-                  border: '1px solid #e6e6df', 
-                  backgroundColor: docPage === totalDocPages ? '#f5f5f0' : '#ffffff', 
-                  color: docPage === totalDocPages ? '#cccccc' : '#5a5a40', 
+                  border: '1px solid #e6e6df',
+                  backgroundColor: docPage === totalDocPages ? '#f5f5f0' : '#ffffff',
+                  color: docPage === totalDocPages ? '#cccccc' : '#5a5a40',
                   cursor: docPage === totalDocPages ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: docPage === totalDocPages ? 'none' : '0 2px 6px rgba(0,0,0,0.04)'
@@ -679,10 +686,10 @@ function Home() {
 
       {/* Hiển thị Modal Đặt Lịch Khám */}
       {showBookingModal && (
-        <BookingModal 
+        <BookingModal
           initialDoctorId={selectedDoctorId}
           initialSpecialtyId={selectedSpecialtyId}
-          onClose={() => setShowBookingModal(false)} 
+          onClose={() => setShowBookingModal(false)}
         />
       )}
     </div>

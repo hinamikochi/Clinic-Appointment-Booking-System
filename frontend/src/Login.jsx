@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Stethoscope, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
-  Loader2, 
-  X,
-  Sparkles
-} from 'lucide-react';
+import {
+  Stethoscope,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  X} from 'lucide-react';
 import './Auth.css';
 
 function Login() {
@@ -29,7 +27,7 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
-  
+
     try {
       const res = await api.post('/login', formData);
       const user = res.data.user;
@@ -60,7 +58,7 @@ function Login() {
 
         <div className="auth-banner-side">
           <div className="banner-overlay"></div>
-          
+
           <div className="banner-brand-box">
             <div className="banner-brand-icon">
               <Stethoscope size={26} color="#ffffff" />
@@ -103,12 +101,12 @@ function Login() {
               <label>Địa chỉ Email</label>
               <div className="input-icon-wrapper">
                 <Mail className="input-icon" size={18} />
-                <input 
-                  type="email" 
-                  placeholder="email@example.com" 
+                <input
+                  type="email"
+                  placeholder="email@example.com"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
             </div>
@@ -117,16 +115,16 @@ function Login() {
               <label>Mật khẩu</label>
               <div className="input-icon-wrapper">
                 <Lock className="input-icon" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••" 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
-                <button 
-                  type="button" 
-                  className="eye-toggle-btn"
+                <button
+                  type="button"
+                  className="eye-toggle-btn" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -147,7 +145,8 @@ function Login() {
             </button>
           </form>
 
-          <div className="form-footer">
+          <p><Link to="/forgot-password">Quên mật khẩu?</Link></p>
+            <div className="form-footer">
             <span>Bạn chưa có tài khoản?</span>
             <Link to="/register" className="auth-link">Đăng ký tài khoản mới</Link>
           </div>

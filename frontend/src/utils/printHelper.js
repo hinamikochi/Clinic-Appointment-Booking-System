@@ -1,9 +1,11 @@
+import api from '../api';
 import { clinicToday, formatDate, formatMoney } from './clinicDate';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-export const printPrescription = (apt, record) => {
+export const printPrescription = async (apt, record) => {
   if (!apt) return;
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
+  const clinic=await api.get('/clinic').then(res=>res.data).catch(()=>({name:'MyClinic',address:'',phone:''}));
   const content = `
     <!DOCTYPE html>
     <html>
@@ -16,7 +18,7 @@ export const printPrescription = (apt, record) => {
   }
 
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     padding: 20px;
     color: #2d2d2a;
     line-height: 1.5;
@@ -145,8 +147,8 @@ export const printPrescription = (apt, record) => {
     </head>
     <body>
       <div class="header">
-        <div class="clinic-name"> HỆ THỐNG Y TẾ PHÒNG KHÁM MyClinic CARE</div>
-        <div class="clinic-sub">Địa chỉ: 144 Xuân Thủy, Cầu Giấy, Hà Nội • Hotline: 1900 8888 • Email: myclinic.care@gmail.com</div>
+        <div class="clinic-name"> ${escapeHtml(clinic.name)}</div>
+        <div class="clinic-sub">${escapeHtml(clinic.address)} ${escapeHtml(clinic.phone)}</div>
         <div class="title">PHIẾU KHÁM BỆNH & ĐƠN THUỐC ĐIỆN TỬ</div>
         <div style="font-size: 12px; color: #777; margin-top: 4px;">Mã phiếu hẹn: <b>LH-${escapeHtml(apt.id)}</b> | Ngày khám: <b>${escapeHtml(formatDate(apt.appointment_date))}</b></div>
       </div>

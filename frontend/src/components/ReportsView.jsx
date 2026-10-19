@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react';
+import api from '../api';
+import { clinicToday } from '../utils/clinicDate';
+import { statusLabels } from '../utils/appointmentStatus';
+export default function ReportsView() {
+  const [from, setFrom] = useState(clinicToday().slice(0, 7) + '-01'), [to, setTo] = useState(clinicToday()), [data, setData] = useState(null), [error, setError] = useState(''), [delivery, setDelivery] = useState(null);
+  useEffect(() => { api.get('/admin/delivery-status').then(res => setDelivery(res.data)).catch(() => {}); }, []);
+  async function load(event) { event.preventDefault(); try { const res = await api.get('/admin/reports', { params: { from, to } }); setData(res.data); setError(''); } catch (err) { setError(err.response?.data?.message || 'Không tải được báo cáo.'); } }
+  function csv() { const content = '\uFEFFTrạng thái,Số lượng\n' + Object.entries(data.counts).map(([status, count]) => `${statusLabels[status] || status},${count}`).join('\n'); const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = `bao-cao-${from}-${to}.csv`; a.click(); URL.revokeObjectURL(url); }
+  return <section className="natural-section-card clinic-admin-panel"><h2>Báo cáo hoạt động</h2><form className="clinic-flex-wrap" onSubmit={load}><label>Từ ngày<input className="clinic-input" type="date" required value={from} onChange={e => setFrom(e.target.value)} /></label><label>Đến ngày<input className="clinic-input" type="date" required min={from} value={to} onChange={e => setTo(e.target.value)} /></label><button className="btn-primary-natural">Xem báo cáo</button></form>{error && <p role="alert">{error}</p>}{data && <><p>Tổng lịch theo ngày khám: <strong>{data.total}</strong></p><p>Tỷ lệ lịch đã hoàn thành trên tổng lịch: {data.completedRate}%</p><ul>{Object.entries(data.counts).map(([status, count]) => <li key={status}>{statusLabels[status] || status}: {count}</li>)}</ul><button className="btn-secondary-natural" onClick={csv}>Tải CSV</button></>}{delivery && <p>Email: {delivery.emailConfigured ? `Đã cấu hình, ${delivery.queued} thư chờ gửi, ${delivery.failed} thư lỗi` : 'Chưa cấu hình; thông báo vẫn được lưu trong hệ thống.'}</p>}</section>;
+}
