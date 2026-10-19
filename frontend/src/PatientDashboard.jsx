@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import ClaimBooking from './components/ClaimBooking';
+import AvailableSlots from './components/AvailableSlots';
+import { clinicToday, formatMoney, formatDate } from './utils/clinicDate';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from './api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -21,6 +24,8 @@ import './AdminDashboard.css';
 
 function PatientDashboard() {
   const navigate = useNavigate();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [activeTab, setActiveTab] = useState('my-appointments');
 
   const userStr = localStorage.getItem('user');
@@ -36,7 +41,7 @@ function PatientDashboard() {
   const [patientAge, setPatientAge] = useState(30);
   const [specialtyId, setSpecialtyId] = useState('');
   const [doctorId, setDoctorId] = useState('');
-  const [appointmentDate, setAppointmentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [appointmentDate, setAppointmentDate] = useState(clinicToday());
   const [timeSlot, setTimeSlot] = useState('09:00 - 09:30');
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +56,9 @@ function PatientDashboard() {
   const [showRecordModal, setShowRecordModal] = useState(false);
 
   // Tải dữ liệu tự động
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setDataLoading(true);
+    setDataError('');
     try {
       const resSpecs = await api.get('/specialties');
       setSpecialties(resSpecs.data);
@@ -78,14 +85,14 @@ function PatientDashboard() {
         setMyAppointments(resApts.data);
       }
     } catch (err) {
-      console.error("Lỗi nạp dữ liệu Bệnh Nhân:", err);
-    }
-  };
+      setDataError(err.response?.data?.message || 'Không tải được dữ liệu.');
+    } finally { setDataLoading(false); }
+  }, [initialUser.id]);
 
   useEffect(() => {
     document.title = "MyClinic - Cổng Thông Tin Bệnh Nhân";
     fetchData();
-  }, []);
+  }, [fetchData]);
 
     // Hàm tính thời gian đến ngày khám
     const getCountdownBadge = (dateStr, status) => {
@@ -144,7 +151,7 @@ function PatientDashboard() {
         appointment_date: appointmentDate,
         time_slot: timeSlot,
         symptoms,
-        userId: userInfo.id
+        // Tài khoản được backend xác định từ JWT.
       });
 
       toast.success(" Đặt lịch khám bệnh thành công!");
@@ -165,7 +172,7 @@ function PatientDashboard() {
       toast.success("Đã hủy lịch hẹn thành công.");
       fetchData();
     } catch (err) {
-      toast.error("Lỗi khi hủy lịch hẹn");
+      toast.error(err.response?.data?.message || 'Lỗi khi hủy lịch hẹn');
     }
   };
 
@@ -277,6 +284,9 @@ function PatientDashboard() {
         </header>
 
         <div className="admin-body">
+          {dataLoading && <p role="status">Đang tải dữ liệu…</p>}
+          {dataError && <p role="alert" className="clinic-feedback">{dataError} <button type="button" onClick={fetchData}>Thử lại</button></p>}
+          {activeTab === 'my-appointments' && <ClaimBooking onSuccess={fetchData} />}
           {/* TAB 1: LỊCH HẸN CỦA TÔI */}
           {activeTab === 'my-appointments' && (
             <div className="natural-section-card">
@@ -310,8 +320,8 @@ function PatientDashboard() {
                           </div>
                         </td>
                         <td>
-                          <div style={{ fontWeight: '700', color: '#2d2d2a' }}>{apt.appointment_date}</div>
-                          <div style={{ fontSize: '12px', color: '#8a8a70', marginTop: '2px' }}>{apt.time_slot}</div>
+                          <div style={{ fontWeight: '700', color: '#2d2d2a' }}>{formatDate(apt.appointment_date)}</div>
+                          <div style={{ fontSize: '12px', color: '#8a8a70', marginTop: '2px' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                           <div style={{ marginTop: '4px' }}>
                             {getCountdownBadge(apt.appointment_date, apt.status)}
                           </div>
@@ -324,7 +334,7 @@ function PatientDashboard() {
                         </td>
                         <td>
                           {/* NÚT 1: HỦY PHIẾU NẾU DẠNG CHỜ DUYỆT */}
-                          {apt.status === 'pending' && (
+                          {['pending', 'confirmed'].includes(apt.status) && new Date(`${apt.appointment_date}T${apt.time_slot.slice(0, 5)}:00+07:00`) > new Date() && (
                             <button 
                               onClick={() => handleCancelAppointment(apt.id)}
                               style={{ background: 'none', border: 'none', color: '#b84343', cursor: 'pointer', fontSize: '13px' }}
@@ -424,6 +434,8 @@ function PatientDashboard() {
               </p>
 
               <form onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="clinic-flex-wrap"><label>Giới tính<select className="clinic-input" value={patientGender} onChange={e => setPatientGender(e.target.value)}><option>Nam</option><option>Nữ</option><option>Khác</option></select></label><label>Tuổi<input className="clinic-input" type="number" required min="0" max="130" value={patientAge} onChange={e => setPatientAge(e.target.value)} /></label></div>
+
                 <div style={{ backgroundColor: '#fdfbf7', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', color: '#5a5a40', textTransform: 'uppercase' }}>
                     1. Thông tin bệnh nhân
@@ -480,23 +492,14 @@ function PatientDashboard() {
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '600' }}>Ngày khám</label>
                       <input 
-                        type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
+                        type="date" required min={clinicToday()} value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
                       />
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '600' }}>Khung giờ khám</label>
-                      <select 
-                        value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)}
-                        style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none' }}
-                      >
-                        <option value="08:00 - 08:30">08:00 - 08:30</option>
-                        <option value="08:30 - 09:00">08:30 - 09:00</option>
-                        <option value="09:00 - 09:30">09:00 - 09:30</option>
-                        <option value="09:30 - 10:00">09:30 - 10:00</option>
-                        <option value="14:00 - 14:30">14:00 - 14:30</option>
-                        <option value="14:30 - 15:00">14:30 - 15:00</option>
-                      </select>
+                      <AvailableSlots doctorId={doctorId} date={appointmentDate} value={timeSlot} onChange={setTimeSlot} />
+                <small>Phí khám: {formatMoney(doctors.find(d => String(d.id) === String(doctorId))?.consultationFee)}</small>
                     </div>
                   </div>
                   {doctorId && (
@@ -622,7 +625,7 @@ function PatientDashboard() {
 
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={13} /> Ngày hẹn tái khám
+                        <Calendar size={13} /> Ngày đề nghị tái khám (chưa đặt lịch)
                       </div>
                       <div style={{ fontSize: '13px', fontWeight: '700', color: '#b84343' }}>
                         {selectedRecord.medicalRecord.re_visit_date || 'Không có hẹn tái khám'}

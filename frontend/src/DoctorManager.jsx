@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import ScheduleEditor from './components/ScheduleEditor';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from './api';
 import { toast } from 'react-hot-toast';
 import { 
@@ -19,6 +20,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
+  const [scheduleDoctor, setScheduleDoctor] = useState(null);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -49,24 +51,24 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     }
   }, [initialSearchQuery]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const resDocs = await api.get('/doctors');
       setDoctors(resDocs.data);
 
       const resSpecs = await api.get('/specialties');
       setSpecialties(resSpecs.data);
-      if (resSpecs.data.length > 0 && !formData.specialtyId) {
-        setFormData(prev => ({ ...prev, specialtyId: resSpecs.data[0].id }));
+      if (resSpecs.data.length > 0) {
+        setFormData(prev => prev.specialtyId ? prev : ({ ...prev, specialtyId: resSpecs.data[0].id }));
       }
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu bác sĩ:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Modal Chỉnh Sửa Bác Sĩ
   const handleOpenEditModal = (doc) => {
@@ -87,7 +89,6 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   const handleUpdateDoctorSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       await api.put(`/admin/doctors/${editFormData.id}`, editFormData);
       toast.success("Cập nhật thông tin Bác sĩ thành công!");
       setEditingDoctor(null);
@@ -106,7 +107,6 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
       await api.post('/admin/doctors', formData);      
      toast.success(" Tạo tài khoản Bác sĩ thành công!");
       setFormData({
@@ -130,13 +130,12 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
   const handleDeleteDoctor = async (id) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bác sĩ này khỏi hệ thống?")) return;
     try {
-      const token = localStorage.getItem('token');
       await api.delete(`/admin/doctors/${id}`);
       toast.success("Đã xóa bác sĩ thành công!");
       fetchData();
       if (onUpdate) onUpdate();
     } catch (err) {
-      toast.error("Lỗi khi xóa bác sĩ");
+      toast.error(err.response?.data?.message || 'Lỗi khi xóa bác sĩ');
     }
   };
 
@@ -149,6 +148,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+      {scheduleDoctor && <><button type="button" onClick={() => setScheduleDoctor(null)}>Đóng lịch làm việc</button><ScheduleEditor key={scheduleDoctor.id} doctor={scheduleDoctor} onSaved={fetchData} /></>}
       <div className="section-header-flex" style={{ backgroundColor: '#ffffff', padding: '20px 24px', borderRadius: '20px', border: '1px solid #e6e6df' }}>
         <div>
           <h2 className="section-title-garamond" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -237,7 +237,7 @@ function DoctorManager({ onUpdate, initialSearchQuery }) {
                   style={{ background: 'none', border: 'none', color: '#5a5a40', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}
                 >
                   <Edit size={14} /> Chỉnh Sửa
-                </button>
+                </button><button type="button" className="btn-secondary-natural" onClick={() => setScheduleDoctor(doc)}>Lịch làm việc</button>
                 <button 
                   onClick={() => handleDeleteDoctor(doc.id)}
                   style={{ background: 'none', border: 'none', color: '#b84343', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', cursor: 'pointer' }}

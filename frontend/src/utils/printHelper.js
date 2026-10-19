@@ -1,11 +1,14 @@
+import { clinicToday, formatDate, formatMoney } from './clinicDate';
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 export const printPrescription = (apt, record) => {
   if (!apt) return;
   const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
   const content = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Phiếu Khám Bệnh & Đơn Thuốc - LH-${apt.id}</title>
+      <title>Phiếu Khám Bệnh & Đơn Thuốc - LH-${escapeHtml(apt.id)}</title>
       <style>
   @page {
     size: A4;
@@ -145,33 +148,34 @@ export const printPrescription = (apt, record) => {
         <div class="clinic-name"> HỆ THỐNG Y TẾ PHÒNG KHÁM MyClinic CARE</div>
         <div class="clinic-sub">Địa chỉ: 144 Xuân Thủy, Cầu Giấy, Hà Nội • Hotline: 1900 8888 • Email: myclinic.care@gmail.com</div>
         <div class="title">PHIẾU KHÁM BỆNH & ĐƠN THUỐC ĐIỆN TỬ</div>
-        <div style="font-size: 12px; color: #777; margin-top: 4px;">Mã phiếu hẹn: <b>LH-${apt.id}</b> | Ngày khám: <b>${apt.appointment_date}</b></div>
+        <div style="font-size: 12px; color: #777; margin-top: 4px;">Mã phiếu hẹn: <b>LH-${escapeHtml(apt.id)}</b> | Ngày khám: <b>${escapeHtml(formatDate(apt.appointment_date))}</b></div>
       </div>
 
       <div class="info-grid">
-        <div class="info-item"><span class="info-label">Họ và tên bệnh nhân:</span> ${apt.patient_name}</div>
-        <div class="info-item"><span class="info-label">Số điện thoại:</span> ${apt.patient_phone}</div>
-        <div class="info-item"><span class="info-label">Giới tính:</span> ${apt.patient_gender || 'Nam'}</div>
-        <div class="info-item"><span class="info-label">Tuổi:</span> ${apt.patient_age || '30'} tuổi</div>
-        <div class="info-item"><span class="info-label">Bác sĩ khám:</span> ${apt.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa'}</div>
-        <div class="info-item"><span class="info-label">Chuyên khoa:</span> ${apt.Specialty?.name || 'Đa khoa'}</div>
+        <div class="info-item"><span class="info-label">Họ và tên bệnh nhân:</span> ${escapeHtml(apt.patient_name)}</div>
+        <div class="info-item"><span class="info-label">Số điện thoại:</span> ${escapeHtml(apt.patient_phone)}</div>
+        <div class="info-item"><span class="info-label">Giới tính:</span> ${escapeHtml(apt.patient_gender || 'Nam')}</div>
+        <div class="info-item"><span class="info-label">Tuổi:</span> ${escapeHtml(apt.patient_age ?? '30')} tuổi</div>
+        <div class="info-item"><span class="info-label">Bác sĩ khám:</span> ${escapeHtml(apt.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa')}</div>
+        <div class="info-item"><span class="info-label">Phí khám:</span> ${escapeHtml(formatMoney(apt.consultationFee))}</div>
+        <div class="info-item"><span class="info-label">Chuyên khoa:</span> ${escapeHtml(apt.Specialty?.name || 'Đa khoa')}</div>
       </div>
 
       <div class="section-box">
         <div class="section-title">1. Chẩn Đoán Lâm Sàng Của Bác Sĩ</div>
-        <div style="font-size: 14px; font-weight: 600; color: #2d2d2a;">${record?.diagnosis || 'Không có chẩn đoán.'}</div>
+        <div style="font-size: 14px; font-weight: 600; color: #2d2d2a;">${escapeHtml(record?.diagnosis || 'Không có chẩn đoán.')}</div>
       </div>
 
       <div class="section-box">
         <div class="section-title">2. Đơn Thuốc Kê Đơn & Hướng Dẫn Liều Dùng</div>
-        <div class="prescription-text">${record?.prescription || 'Không có đơn thuốc chỉ định.'}</div>
+        <div class="prescription-text">${escapeHtml(record?.prescription || 'Không có đơn thuốc chỉ định.')}</div>
       </div>
 
       <div class="section-box">
         <div class="section-title">3. Lời Dặn Bác Sĩ & Hẹn Tái Khám</div>
-        <div style="font-size: 14px; font-style: italic;">"${record?.advice || 'Nghỉ ngơi và uống đủ nước ấm.'}"</div>
+        <div style="font-size: 14px; font-style: italic;">"${escapeHtml(record?.advice || 'Không có lời dặn được ghi nhận.')}"</div>
         <div style="font-size: 13px; font-weight: bold; color: #b84343; margin-top: 8px;">
-           Ngày hẹn tái khám: ${record?.re_visit_date || 'Theo dõi sức khỏe tại nhà'}
+           Ngày đề nghị tái khám (chưa đặt lịch): ${escapeHtml(record?.re_visit_date ? formatDate(record.re_visit_date) : 'Chưa đề nghị')}
         </div>
       </div>
 
@@ -179,12 +183,12 @@ export const printPrescription = (apt, record) => {
         <div class="sign-box">
           <div style="font-size: 12px; color: #666;">Bệnh nhân ký tên</div>
           <div class="sign-title">BỆNH NHÂN</div>
-          <div style="font-size: 13px; font-weight: bold;">${apt.patient_name}</div>
+          <div style="font-size: 13px; font-weight: bold;">${escapeHtml(apt.patient_name)}</div>
         </div>
         <div class="sign-box">
-          <div style="font-size: 12px; color: #666;">Hà Nội, Ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</div>
+          <div style="font-size: 12px; color: #666;">Ngày ${escapeHtml(formatDate(clinicToday()))}</div>
           <div class="sign-title">BÁC SĨ KHÁM BỆNH</div>
-          <div style="font-size: 13px; font-weight: bold;">${apt.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa'}</div>
+          <div style="font-size: 13px; font-weight: bold;">${escapeHtml(apt.DoctorInfo?.User?.full_name || 'Bác sĩ chuyên khoa')}</div>
         </div>
       </div>
 

@@ -1,3 +1,5 @@
+import AvailableSlots from './components/AvailableSlots';
+import { clinicToday, formatMoney } from './utils/clinicDate';
 import React, { useState, useEffect } from 'react';
 import api from './api';
 import { X, Plus, User, Stethoscope } from 'lucide-react';
@@ -15,10 +17,11 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
   const [specialtyId, setSpecialtyId] = useState(initialSpecialtyId || '');
   const [doctorId, setDoctorId] = useState(initialDoctorId || '');
-  const [appointmentDate, setAppointmentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [appointmentDate, setAppointmentDate] = useState(clinicToday());
   const [timeSlot, setTimeSlot] = useState('09:00 - 09:30');
   const [symptoms, setSymptoms] = useState('');
   const [loading, setLoading] = useState(false);
+  const [receipt, setReceipt] = useState(null);
 
   // Tải danh sách Chuyên khoa & Bác sĩ từ Backend
   useEffect(() => {
@@ -72,7 +75,7 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
     setLoading(true);
     try {
-      await api.post('/appointments', {
+      const response = await api.post('/appointments', {
         patient_name: patientName,
         patient_phone: patientPhone,
         patient_gender: patientGender,
@@ -86,7 +89,8 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
 
       toast.success(' Đặt lịch khám bệnh thành công! Phòng khám sẽ liên hệ xác nhận với bạn.');
       if (onSuccess) onSuccess();
-      onClose();
+      if (response.data.data.bookingCode) setReceipt(response.data.data.bookingCode);
+      else onClose();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch khám');
     } finally {
@@ -114,8 +118,9 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
           </button>
         </div>
 
+        {receipt && <div style={{ padding: 24 }} role="status"><h3>Đặt lịch thành công</h3><p>Lưu mã nhận lịch để thêm lịch hẹn vào tài khoản bệnh nhân sau khi đăng nhập.</p><code style={{ overflowWrap: 'anywhere', userSelect: 'all' }}>{receipt}</code><p><button type="button" className="btn-primary-natural" onClick={onClose}>Đã lưu mã, đóng</button></p></div>}
         {/* Body Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+        <form hidden={!!receipt} onSubmit={handleSubmit} style={{ padding: '24px', display: receipt ? 'none' : 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
           
           {/* Bước 1: Thông tin bệnh nhân */}
           <div style={{ backgroundColor: '#fdfbf7', padding: '16px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -157,7 +162,7 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Tuổi</label>
                 <input 
-                  type="number" value={patientAge} onChange={(e) => setPatientAge(e.target.value)}
+                  type="number" required min="0" max="130" value={patientAge} onChange={(e) => setPatientAge(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 />
               </div>
@@ -204,25 +209,15 @@ function BookingModal({ onClose, onSuccess, initialDoctorId, initialSpecialtyId 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Ngày khám</label>
                 <input 
-                  type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
+                  type="date" required min={clinicToday()} value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
                 />
               </div>
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: '600', color: '#2d2d2a' }}>Khung giờ khám</label>
-                <select 
-                  value={timeSlot} onChange={(e) => setTimeSlot(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: '99px', border: '1px solid #e6e6df', marginTop: '4px', outline: 'none', fontSize: '13px' }}
-                >
-                  <option value="08:00 - 08:30">08:00 - 08:30</option>
-                  <option value="08:30 - 09:00">08:30 - 09:00</option>
-                  <option value="09:00 - 09:30">09:00 - 09:30</option>
-                  <option value="09:30 - 10:00">09:30 - 10:00</option>
-                  <option value="14:00 - 14:30">14:00 - 14:30</option>
-                  <option value="14:30 - 15:00">14:30 - 15:00</option>
-                  <option value="15:00 - 15:30">15:00 - 15:30</option>
-                </select>
+<AvailableSlots doctorId={doctorId} date={appointmentDate} value={timeSlot} onChange={setTimeSlot} />
+                <small>Phí khám: {formatMoney(doctors.find(d => String(d.id) === String(doctorId))?.consultationFee)}</small>
               </div>
             </div>
           </div>

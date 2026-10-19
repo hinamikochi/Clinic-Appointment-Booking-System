@@ -9,13 +9,12 @@ import AdminDashboard from './AdminDashboard';
 import DoctorDashboard from './DoctorDashboard';
 import PatientDashboard from './PatientDashboard';
 import './App.css';
-import api from './api';
 
 
 // Bảo vệ quyền Admin
 const ProtectedAdminRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
-  if (!userStr) return <Navigate to="/login" replace />;
+  if (!userStr || !localStorage.getItem('token')) return <Navigate to="/login" replace />;
 
   try {
     const user = JSON.parse(userStr);
@@ -28,27 +27,27 @@ const ProtectedAdminRoute = ({ children }) => {
 // Bảo vệ quyền Bác Sĩ
 const ProtectedDoctorRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
-  if (!userStr) return <Navigate to="/login" replace />;
+  if (!userStr || !localStorage.getItem('token')) return <Navigate to="/login" replace />;
 
   try {
     const user = JSON.parse(userStr);
     if (user.role === 'doctor') return children;
   } catch (e) { console.error(e); }
 
-  return children;
+  return <Navigate to="/login" replace />;
 };
 
 // Bảo vệ quyền Bệnh Nhân
 const ProtectedPatientRoute = ({ children }) => {
   const userStr = localStorage.getItem('user');
-  if (!userStr) return <Navigate to="/login" replace />;
+  if (!userStr || !localStorage.getItem('token')) return <Navigate to="/login" replace />;
 
   try {
     const user = JSON.parse(userStr);
     if (user.role === 'patient') return children;
   } catch (e) { console.error(e); }
 
-  return children;
+  return <Navigate to="/login" replace />;
 };
 
 function MainLayout() {

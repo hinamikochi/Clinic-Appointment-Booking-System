@@ -1,12 +1,24 @@
+import RecordAudit from './RecordAudit';
+import { formatDate, formatMoney } from '../utils/clinicDate';
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { toast } from 'react-hot-toast';
-import { CalendarDays, FileText, Pill, Calendar, X, Search, Printer } from 'lucide-react';
+import { CalendarDays, FileText, Pill, Calendar, X, Printer } from 'lucide-react';
 import { printPrescription } from '../utils/printHelper';
 
 export function AppointmentsView() {
   const [appointments, setAppointments] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [search, setSearch] = useState('');
+  const [date, setDate] = useState('');
+  const [doctorId, setDoctorId] = useState('');
+  const [specialtyId, setSpecialtyId] = useState('');
+  const [doctors, setDoctors] = useState([]);
+  const [specialties, setSpecialties] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
 
   // State Phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -16,26 +28,33 @@ export function AppointmentsView() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
 
-  const fetchAppointments = async () => {
-    try {
-      const res = await api.get('/appointments');
-      setAppointments(res.data);
-    } catch (err) {
-      console.error("Lỗi tải danh sách lịch hẹn:", err);
-    }
-  };
-
   useEffect(() => {
-    fetchAppointments();
+    let active = true;
+    setLoading(true);
+    setError('');
+    const timer = setTimeout(() => {
+      api.get('/appointments', { params: { page: currentPage, limit: itemsPerPage, status: filterStatus, search, date, doctorId, specialtyId } }).then(res => {
+        if (!active) return;
+        setAppointments(res.data.items);
+        setTotalPages(res.data.totalPages);
+        if (currentPage > res.data.totalPages) setCurrentPage(res.data.totalPages);
+      }).catch(err => {
+        if (active) { setError(err.response?.data?.message || 'Không tải được lịch hẹn.'); setAppointments([]); }
+      }).finally(() => { if (active) setLoading(false); });
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [currentPage, filterStatus, search, date, doctorId, specialtyId, refresh]);
+  useEffect(() => {
+    Promise.all([api.get('/doctors'), api.get('/specialties')]).then(([docs, specs]) => { setDoctors(docs.data); setSpecialties(specs.data); }).catch(() => setError('Không tải được bộ lọc.'));
   }, []);
 
   const handleUpdateStatus = async (id, status) => {
     try {
       await api.put(`/appointments/${id}/status`, { status });
       toast.success("Cập nhật trạng thái lịch hẹn thành công!");
-      fetchAppointments();
+      setRefresh(n => n + 1);
     } catch (err) {
-      toast.error("Lỗi cập nhật trạng thái lịch hẹn");
+      toast.error(err.response?.data?.message || 'Lỗi cập nhật trạng thái lịch hẹn');
     }
   };
 
@@ -48,18 +67,8 @@ export function AppointmentsView() {
   };
 
 
-  const filtered = appointments.filter(a => {
-    if (filterStatus !== 'all' && a.status !== filterStatus) return false;
-    return true;
-  });
-
-  // chuyển về trang đầu tiên khi đổi trạng thái lọc 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterStatus]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginated = appointments;
+  const changeFilter = setter => event => { setter(event.target.value); setCurrentPage(1); };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
@@ -76,7 +85,7 @@ export function AppointmentsView() {
 
         <select 
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={changeFilter(setFilterStatus)}
           style={{ padding: '8px 16px', borderRadius: '99px', border: '1px solid #e6e6df', backgroundColor: '#fdfbf7', fontSize: '13px', outline: 'none' }}
         >
           <option value="all">-- Tất cả trạng thái --</option>
@@ -87,6 +96,14 @@ export function AppointmentsView() {
         </select>
       </div>
 
+      <div className="clinic-flex-wrap">
+        <input className="clinic-input" style={{ maxWidth: 260 }} aria-label="Tìm bệnh nhân" placeholder="Tên hoặc số điện thoại" value={search} onChange={changeFilter(setSearch)} />
+        <input className="clinic-input" style={{ maxWidth: 180 }} aria-label="Lọc ngày khám" type="date" value={date} onChange={changeFilter(setDate)} />
+        <select aria-label="Lọc chuyên khoa" value={specialtyId} onChange={changeFilter(setSpecialtyId)}><option value="">Tất cả chuyên khoa</option>{specialties.map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}</select>
+        <select aria-label="Lọc bác sĩ" value={doctorId} onChange={changeFilter(setDoctorId)}><option value="">Tất cả bác sĩ</option>{doctors.map(doc => <option key={doc.id} value={doc.id}>{doc.User?.full_name}</option>)}</select>
+      </div>
+      {loading && <p role="status">Đang tải lịch hẹn…</p>}
+      {error && <p role="alert" className="clinic-feedback">{error} <button onClick={() => setRefresh(n => n + 1)}>Thử lại</button></p>}
       {/* Bảng Danh Sách Lịch Hẹn Thực */}
       <div className="natural-section-card" style={{ width: '100%' }}>
        <div className="natural-table-container">
@@ -97,14 +114,14 @@ export function AppointmentsView() {
               <th>Bệnh Nhân</th>
               <th>Số Điện Thoại</th>
               <th>Chuyên Khoa</th>
-              <th>Bác Sĩ Duyện Khám</th>
+              <th>Bác Sĩ Khám</th>
               <th>Ngày & Khung Giờ</th>
               <th>Trạng Thái</th>
               <th>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
-            {paginated.length > 0 ? (
+            {!loading && paginated.length > 0 ? (
               paginated.map((apt) => (
                 <tr key={apt.id}>
                   <td style={{ fontWeight: '700', color: '#5a5a40' }}>LH-{apt.id}</td>
@@ -113,8 +130,8 @@ export function AppointmentsView() {
                   <td>{apt.Specialty?.name || 'Chuyên Khoa'}</td>
                   <td>{apt.DoctorInfo?.User?.full_name || 'Bác Sĩ'}</td>
                   <td>
-                    <div style={{ fontWeight: '600' }}>{apt.appointment_date}</div>
-                    <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div>
+                    <div style={{ fontWeight: '600' }}>{formatDate(apt.appointment_date)}</div>
+                    <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                   </td>
                   <td>
                     <span className={`badge-status ${apt.status === 'completed' ? 'active' : apt.status === 'confirmed' ? 'active' : 'pending'}`}>
@@ -264,6 +281,7 @@ export function AppointmentsView() {
             </div>
 
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '75vh', overflowY: 'auto' }}>
+              {selectedRecord.medicalRecord && <RecordAudit recordId={selectedRecord.medicalRecord.id} />}
               <div style={{ backgroundColor: '#fdfbf7', padding: '14px 18px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '11px', color: '#8a8a70', textTransform: 'uppercase', fontWeight: '700' }}>Bác sĩ khám</div>
@@ -308,7 +326,7 @@ export function AppointmentsView() {
                     </div>
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: '700', color: '#8a8a70', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={13} /> Ngày hẹn tái khám
+                        <Calendar size={13} /> Ngày đề nghị tái khám (chưa đặt lịch)
                       </div>
                       <div style={{ fontSize: '13px', fontWeight: '700', color: '#b84343' }}>
                         {selectedRecord.medicalRecord.re_visit_date || 'Không có hẹn tái khám'}

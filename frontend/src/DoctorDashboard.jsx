@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import RecordAudit from './components/RecordAudit';
+import ScheduleEditor from './components/ScheduleEditor';
+import PrescriptionEditor from './components/PrescriptionEditor';
+import { clinicToday, formatDate, formatMoney } from './utils/clinicDate';
+import React, { useState, useEffect, useCallback } from 'react';
 import { printPrescription } from './utils/printHelper';
 import api from './api';
 import { toast } from 'react-hot-toast';
@@ -20,6 +24,8 @@ import './AdminDashboard.css';
 
 function DoctorDashboard() {
   const navigate = useNavigate();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
   const [activeTab, setActiveTab] = useState('appointments');
 
   const userStr = localStorage.getItem('user');
@@ -31,6 +37,7 @@ function DoctorDashboard() {
 
   const [diagnosis, setDiagnosis] = useState('');
   const [prescription, setPrescription] = useState('');
+  const [prescriptionItems, setPrescriptionItems] = useState([]);
   const [advice, setAdvice] = useState('');
   const [reVisitDate, setReVisitDate] = useState('');
   const [saving, setSaving] = useState(false);
@@ -43,7 +50,9 @@ function DoctorDashboard() {
   const [completedPage, setCompletedPage] = useState(1);
   const itemsPerPageCompleted = 6;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setDataLoading(true);
+    setDataError('');
     try {
       if (!user.id) return;
       const resDoc = await api.get(`/doctor/info/${user.id}`);
@@ -54,17 +63,18 @@ function DoctorDashboard() {
         setAppointments(resApts.data);
       }
     } catch (err) {
-      console.error("Lỗi nạp dữ liệu Bác sĩ:", err);
-    }
-  };
+      setDataError(err.response?.data?.message || 'Không tải được dữ liệu.');
+    } finally { setDataLoading(false); }
+  }, [user.id]);
 
   useEffect(() => {
     document.title = "MyClinic - Dashboard Bác Sĩ Khám Bệnh";
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleOpenExamination = (apt) => {
     setSelectedAppointment(apt);
+    setPrescriptionItems(apt.MedicalRecord?.prescriptionItems || []);
     if (apt.MedicalRecord) {
       setDiagnosis(apt.MedicalRecord.diagnosis || '');
       setPrescription(apt.MedicalRecord.prescription || '');
@@ -94,6 +104,7 @@ function DoctorDashboard() {
         doctorId: doctorInfo.id,
         diagnosis,
         prescription,
+        prescriptionItems,
         advice,
         re_visit_date: reVisitDate
       });
@@ -120,7 +131,7 @@ function DoctorDashboard() {
     return a.patient_name.toLowerCase().includes(q) || a.patient_phone.includes(q);
   });
 
-  const pendingList = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
+  const pendingList = filteredAppointments.filter(a => a.status === 'confirmed');
   const completedList = filteredAppointments.filter(a => a.status === 'completed');
 
   // chuyển về trang đầu tiên khi tìm kiếm
@@ -230,6 +241,8 @@ function DoctorDashboard() {
         </header>
 
         <div className="admin-body">
+          {dataLoading && <p role="status">Đang tải dữ liệu…</p>}
+          {dataError && <p role="alert" className="clinic-feedback">{dataError} <button type="button" onClick={fetchData}>Thử lại</button></p>}
           {activeTab === 'appointments' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e6e6df', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -269,8 +282,8 @@ function DoctorDashboard() {
                           <td>{apt.patient_gender} • {apt.patient_age} tuổi</td>
                           <td>{apt.patient_phone}</td>
                           <td>
-                            <div style={{ fontWeight: '600' }}>{apt.appointment_date}</div>
-                            <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div>
+                            <div style={{ fontWeight: '600' }}>{formatDate(apt.appointment_date)}</div>
+                            <div style={{ fontSize: '12px', color: '#8a8a70' }}>{apt.time_slot}</div><small>Phí khám: {formatMoney(apt.consultationFee)}</small>
                           </td>
                           <td style={{ color: '#5a5a40', fontStyle: 'italic' }}>"{apt.symptoms}"</td>
                           <td>
@@ -376,6 +389,8 @@ function DoctorDashboard() {
               </div>
 
               <form onSubmit={handleSaveMedicalRecord} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {selectedAppointment.MedicalRecord && <RecordAudit recordId={selectedAppointment.MedicalRecord.id} />}
+                <PrescriptionEditor items={prescriptionItems} onChange={setPrescriptionItems} />
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                     <FileText size={16} color="#5a5a40" /> Chẩn Đoán Bệnh Của Bác Sĩ *
@@ -390,7 +405,7 @@ function DoctorDashboard() {
 
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <Pill size={16} color="#5a5a40" /> Kê Đơn Thuốc & Liều Dùng
+                    <Pill size={16} color="#5a5a40" /> Ghi chú đơn thuốc (dùng khi chưa có thuốc theo dòng)
                   </label>
                   <textarea 
                     rows={4}
@@ -413,10 +428,10 @@ function DoctorDashboard() {
                   </div>
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: '700', color: '#2d2d2a', marginBottom: '6px', display: 'block' }}>
-                      Hẹn Ngày Tái Khám
+                      Ngày đề nghị tái khám (chưa đặt lịch)
                     </label>
                     <input 
-                      type="date"
+                      type="date" min={selectedAppointment.MedicalRecord?.re_visit_date || clinicToday()}
                       value={reVisitDate} onChange={(e) => setReVisitDate(e.target.value)}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e6e6df', outline: 'none', fontSize: '13px' }}
                     />
@@ -455,12 +470,12 @@ function DoctorDashboard() {
                 </thead>
                 <tbody>
                   {completedList.length > 0 ? (
-                    completedList.map((apt) => (
+                    paginatedCompletedList.map((apt) => (
                       <tr key={apt.id}>
                         <td style={{ fontWeight: '700', color: '#5a5a40', whiteSpace: 'nowrap' }}>LH-{apt.id}</td>
                         <td style={{ fontWeight: '700', color: '#2d2d2a', whiteSpace: 'nowrap' }}>{apt.patient_name}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>{apt.patient_phone}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{apt.appointment_date}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{formatDate(apt.appointment_date)}</td>
                         <td style={{ fontWeight: '600', color: '#2e6f40',  textAlign: 'justify' }}>
                           {apt.MedicalRecord?.diagnosis || 'Đã chẩn đoán'}
                         </td>
@@ -477,7 +492,7 @@ function DoctorDashboard() {
                             style={{ padding: '6px 14px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                           >
                             <Printer size={14} /> In Kết Quả Khám
-                          </button>
+                          </button><button type="button" className="btn-secondary-natural" onClick={() => handleOpenExamination(apt)}>Sửa bệnh án</button>
                         </td>
                       </tr>
                     ))
@@ -491,11 +506,12 @@ function DoctorDashboard() {
                 </tbody>
               </table>
              </div>
+             {totalCompletedPages > 1 && <div className="clinic-flex-wrap"><button type="button" disabled={completedPage <= 1} onClick={() => setCompletedPage(n => n - 1)}>Trang trước</button><span>Trang {completedPage}/{totalCompletedPages}</span><button type="button" disabled={completedPage >= totalCompletedPages} onClick={() => setCompletedPage(n => n + 1)}>Trang sau</button></div>}
             </div>
           )}
 
           {activeTab === 'profile' && (
-            <ProfileView onUpdate={fetchData} />
+            <><ProfileView onUpdate={fetchData} />{doctorInfo && <ScheduleEditor key={JSON.stringify(doctorInfo.workSchedule)} doctor={doctorInfo} onSaved={fetchData} />}</>
           )}
         </div>
       </div>

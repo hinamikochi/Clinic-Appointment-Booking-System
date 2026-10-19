@@ -45,7 +45,6 @@ function SpecialtyManager({ onUpdate }) {
   const handleCreateSpecialty = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       await api.post('/specialties', formData);
       toast.success('Tạo chuyên khoa thành công!');
       setShowAddModal(false);
@@ -69,7 +68,6 @@ function SpecialtyManager({ onUpdate }) {
   const handleUpdateSpecialty = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       await api.put(`/specialties/${editFormData.id}`, { name: editFormData.name, description: editFormData.description });
       toast.success('Cập nhật chuyên khoa thành công!');
       setShowEditModal(false);
@@ -84,7 +82,6 @@ function SpecialtyManager({ onUpdate }) {
   const handleDeleteSpecialty = async (id) => {
     if (!window.confirm('Bạn có chắc muốn xóa chuyên khoa này?')) return;
     try {
-      const token = localStorage.getItem('token');
       await api.delete(`/specialties/${id}`);
       toast.success('Đã xóa chuyên khoa thành công!');
       fetchSpecialties();

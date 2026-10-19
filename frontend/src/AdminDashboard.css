@@ -458,3 +458,17 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+.clinic-flex-wrap { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.clinic-input { display: block; width: 100%; min-width: 0; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; margin: 6px 0 12px; font: inherit; }
+.clinic-prescription-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.clinic-feedback { padding: 12px; border-radius: 10px; background: #fff8e1; color: #5a5a40; }
+@media (max-width: 576px) {
+  .admin-main-content { min-width: 0; }
+  .admin-body { padding: 12px !important; }
+  .admin-header-bar { height: auto; min-height: 72px; flex-wrap: wrap; gap: 8px; padding: 12px !important; }
+  .section-header-flex { flex-wrap: wrap; gap: 12px; padding: 16px !important; }
+  .clinic-prescription-row { grid-template-columns: 1fr; }
+  .natural-section-card { padding: 14px !important; }
+  .clinic-profile-grid { grid-template-columns: 1fr !important; }
+}

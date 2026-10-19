@@ -47,8 +47,7 @@ export function ProfileView({ onUpdate }) {
       }
     };
     fetchLatestUser();
-  }, []);
-
+  }, [initialUser.id]);
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdatingProfile(true);
@@ -78,8 +77,8 @@ export function ProfileView({ onUpdate }) {
       toast.error("Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!");
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!");
+    if (newPassword.length < 8) {
+      toast.error("Mật khẩu mới phải có ít nhất 8 ký tự!");
       return;
     }
 
@@ -103,7 +102,7 @@ export function ProfileView({ onUpdate }) {
   const isDoctor = userInfo.role === 'doctor';
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="clinic-profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
       
       {/* CẬP NHẬT THÔNG TIN CÁ NHÂN */}
       <div className="natural-section-card">
