@@ -4,8 +4,9 @@ const { migrate } = require('./migrations');
 async function start() {
     await sequelize.authenticate();
     await migrate();
+    const stopWorker = require('./services/notifications').startWorker();
     const server = app.listen(process.env.PORT || 5001, () => console.log('MyClinic API đã sẵn sàng.'));
-    const shutdown = () => server.close(async () => { await sequelize.close(); process.exit(0); });
+    const shutdown = () => { stopWorker(); server.close(async () => { await sequelize.close(); process.exit(0); }); };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
 }

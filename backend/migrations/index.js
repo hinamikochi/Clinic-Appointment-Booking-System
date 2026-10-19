@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 require('../models/associations');
 require('../models/MedicalRecordAudit');
+require('../models/Operations');
 
 async function migrate() {
     const qi = sequelize.getQueryInterface();
@@ -15,7 +16,7 @@ async function migrate() {
         locked = true;
         await qi.createTable('schema_migrations', { name: { type: DataTypes.STRING, primaryKey: true }, appliedAt: { type: DataTypes.DATE, allowNull: false } });
         const [applied] = await sequelize.query("SELECT name FROM schema_migrations WHERE name = '001_clinic_integrity'");
-        if (applied.length) return;
+        if (!applied.length) {
         const tables = await qi.showAllTables();
         if (!tables.includes('users')) await sequelize.sync();
         const additions = {
@@ -35,6 +36,8 @@ async function migrate() {
         // Historical fees stay NULL: current prices cannot establish past prices.
         await sequelize.models.MedicalRecordAudit.sync();
         await sequelize.query("INSERT INTO schema_migrations (name, appliedAt) VALUES ('001_clinic_integrity', NOW())");
+        }
+        await require('./002_operations')();
     } finally {
         if (locked) await query("SELECT RELEASE_LOCK('myclinic_schema_migrations')");
         await sequelize.connectionManager.releaseConnection(connection);

@@ -7,8 +7,13 @@ const app = express();
 app.disable('x-powered-by');
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json({ limit: '256kb' }));
+app.use('/api/login', require('./middlewares/rateLimit')(15));
+app.use('/api/register', require('./middlewares/rateLimit')(10));
+app.post('/api/appointments', require('./middlewares/rateLimit')(30));
 app.use('/api/admin', authMiddleware, checkRole(['admin']));
 app.use(require('./routes/api'));
+app.use(require('./routes/operations'));
+app.use(require('./routes/emailAccount'));
 app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.status || (error.name === 'SequelizeUniqueConstraintError' ? 409 : error.name === 'SequelizeValidationError' ? 400 : 500);

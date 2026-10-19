@@ -22,21 +22,23 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     },
     prescriptionItems: { type: DataTypes.JSON, allowNull: true },
     updatedBy: { type: DataTypes.INTEGER, allowNull: true },
+    patientProfileId: { type: DataTypes.INTEGER, allowNull: true },
+    version: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false },
     diagnosis: {
         type: DataTypes.TEXT,
-        allowNull: false 
+        allowNull: false
     },
     prescription: {
         type: DataTypes.TEXT,
-        allowNull: true 
+        allowNull: true
     },
     advice: {
         type: DataTypes.TEXT,
-        allowNull: true 
+        allowNull: true
     },
     re_visit_date: {
         type: DataTypes.STRING,
-        allowNull: true 
+        allowNull: true
     }
 }, {
     tableName: 'medicalrecords'

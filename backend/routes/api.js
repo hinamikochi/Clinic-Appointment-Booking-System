@@ -47,7 +47,7 @@ async function findFirstAvailableRoom(specialtyId) {
 app.get('/api/users/:id', authMiddleware, ownAccount('id'), async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
-            attributes: ['id', 'full_name', 'email', 'phone', 'gender', 'address', 'role'],
+            attributes: ['id', 'full_name', 'email', 'phone', 'gender', 'address', 'role', 'isActive'],
             include: [{ model: DoctorInfo }]
         });
         if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
@@ -82,13 +82,13 @@ app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = v.credentials(req.body);
         const user = await User.findOne({ where: { email } });
-        if (!user) return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
+        if (!user || user.isActive === false) return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
 
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: user.id, role: user.role, tokenVersion: user.tokenVersion || 0 },
             jwtSecret,
             { expiresIn: '1d' }
         );
@@ -120,8 +120,8 @@ app.get('/api/availability', async (req, res, next) => {
         if (!v.validDate(date) || !Number.isSafeInteger(Number(doctorId)) || Number(doctorId) < 1) v.fail('Ngày hoặc bác sĩ không hợp lệ.');
         const doctor = await DoctorInfo.findByPk(doctorId);
         if (!doctor) v.fail('Không tìm thấy bác sĩ.', 404);
-        const appointments = await Appointment.findAll({ where: { doctorId, appointment_date: date, status: { [Op.ne]: 'cancelled' } }, attributes: ['time_slot'] });
-        res.json(v.TIME_SLOTS.map(slot => ({ slot, available: v.futureSlot(date, slot) && v.worksOn(doctor, date, slot) && !appointments.some(a => a.time_slot === slot) })));
+        const appointments = await Appointment.findAll({ where: { doctorId, appointment_date: date, status: { [Op.notIn]: ['cancelled', 'no_show'] } }, attributes: ['time_slot'] });
+        res.json(v.slotsOn(doctor, date).map(slot => ({ slot, available: doctor.acceptingBookings !== false && v.futureSlot(date, slot) && v.worksOn(doctor, date, slot) && !appointments.some(a => v.overlaps(a.time_slot, slot)) })));
     } catch (error) { next(error); }
 });
 
@@ -134,9 +134,10 @@ app.put('/api/doctors/:id/schedule', authMiddleware, checkRole(['admin', 'doctor
             await appointmentService.allowedDoctor(req.user, doctor.id, transaction);
             const active = await Appointment.findAll({ where: { doctorId: doctor.id, status: { [Op.in]: ['pending', 'confirmed'] }, appointment_date: { [Op.gte]: v.clinicDate() } }, transaction });
             if (active.some(a => v.futureSlot(a.appointment_date, a.time_slot) && !v.worksOn({ workSchedule }, a.appointment_date, a.time_slot))) v.fail('Lịch làm việc mới xung đột với lịch hẹn đang có. Hãy xử lý các lịch hẹn đó trước.');
-            await doctor.update({ workSchedule }, { transaction });
+            if (Number(req.body.version) !== doctor.scheduleVersion) v.fail('Lịch làm việc đã thay đổi. Vui lòng tải lại.', 409);
+            await doctor.update({ workSchedule, scheduleVersion: doctor.scheduleVersion + 1 }, { transaction });
         });
-        res.json({ message: 'Đã cập nhật lịch làm việc.' });
+        res.json({ message: 'Đã cập nhật lịch làm việc.', version: (await DoctorInfo.findByPk(req.params.id)).scheduleVersion });
     } catch (error) { next(error); }
 });
 
@@ -167,7 +168,7 @@ app.get('/api/patient/appointments/:userId', authMiddleware, checkRole(['patient
 
 // API: Bệnh nhân Hủy Lịch Hẹn
 app.put('/api/appointments/:id/cancel', authMiddleware, checkRole(['patient', 'admin']), async (req, res, next) => {
-    try { const data = await appointmentService.changeStatus(req.params.id, 'cancelled', req.user, true); res.json({ message: 'Đã hủy lịch hẹn thành công!', data }); }
+    try { const data = await appointmentService.changeStatus(req.params.id, 'cancelled', req.user, true, req.body.reason); res.json({ message: 'Đã hủy lịch hẹn thành công!', data }); }
     catch (error) { next(error); }
 });
 
@@ -176,7 +177,7 @@ app.get('/api/appointments', authMiddleware, checkRole(['admin']), require('../c
 
 // API: Admin Cập Nhật Trạng Thái Lịch Hẹn
 app.put('/api/appointments/:id/status', authMiddleware, checkRole(['admin', 'doctor']), async (req, res, next) => {
-    try { const data = await appointmentService.changeStatus(req.params.id, req.body.status, req.user); res.json({ message: 'Cập nhật trạng thái thành công!', data }); }
+    try { const data = await appointmentService.changeStatus(req.params.id, req.body.status, req.user, false, req.body.reason); res.json({ message: 'Cập nhật trạng thái thành công!', data }); }
     catch (error) { next(error); }
 });
 
@@ -184,8 +185,9 @@ app.put('/api/appointments/:id/status', authMiddleware, checkRole(['admin', 'doc
 app.get(['/api/doctors', '/api/admin/doctors'], async (req, res) => {
     try {
         const doctors = await DoctorInfo.findAll({
+            ...(req.path === '/api/doctors' ? { where: { acceptingBookings: true, specialtyId: { [Op.ne]: null } } } : {}),
             include: [
-                { model: User, attributes: ['full_name', 'email', 'role'] },
+                { model: User, attributes: ['full_name', 'email', 'role', 'isActive'], ...(req.path === '/api/doctors' ? { where: { isActive: true }, required: true } : {}) },
                 { model: Specialty, attributes: ['id', 'name'] }
             ]
         });
@@ -316,6 +318,7 @@ app.put('/api/admin/doctors/:id', authMiddleware, checkRole(['admin']), async (r
         if (image && !/^https?:\/\//.test(image)) v.fail('Ảnh phải là URL HTTP hoặc HTTPS.');
         const docInfo = await DoctorInfo.findByPk(id, { include: [{ model: User }] });
         if (!docInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+        if (specialtyId && Number(specialtyId) !== docInfo.specialtyId && await Appointment.count({ where: { doctorId: docInfo.id, status: { [Op.in]: ['pending', 'confirmed', 'arrived', 'in_progress'] } } })) v.fail('Cần xử lý lịch hẹn đang có trước khi đổi chuyên khoa.', 409);
 
         if (full_name && docInfo.User) {
             await docInfo.User.update({ full_name });
@@ -375,7 +378,7 @@ app.get('/api/doctor/info/:userId', authMiddleware, checkRole(['doctor', 'admin'
                 { model: Specialty, attributes: ['id', 'name'] }
             ]
         });
-        if (!doctorInfo) return res.status(404).json({ message: 'Không tìm thấy thông tin Bác sĩ!' });
+        if (!doctorInfo) return res.status(409).json({ message: 'Hồ sơ bác sĩ chưa hoàn thiện. Vui lòng liên hệ quản trị viên để bổ sung.' });
         res.json(doctorInfo);
     } catch (error) {
         console.error('Lỗi lấy thông tin bác sĩ:', error);
@@ -471,7 +474,7 @@ app.put('/api/users/change-password/:id', authMiddleware, ownAccount('id'), asyn
         }
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(new_password, salt);
-        await user.update({ password: hashedPassword });
+        await user.update({ password: hashedPassword, tokenVersion: user.tokenVersion + 1 });
         res.json({ message: 'Đổi mật khẩu thành công!' });
     } catch (error) {
         console.error('Lỗi đổi mật khẩu:', error);
@@ -488,6 +491,9 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
         const confirmedCount = await Appointment.count({ where: { status: 'confirmed' } });
         const pendingCount = await Appointment.count({ where: { status: 'pending' } });
         const cancelledCount = await Appointment.count({ where: { status: 'cancelled' } });
+        const arrivedCount=await Appointment.count({where:{status:'arrived'}});
+        const inProgressCount=await Appointment.count({where:{status:'in_progress'}});
+        const noShowCount=await Appointment.count({where:{status:'no_show'}});
         // Tính Tỷ lệ khám thành công %
         const successRate = totalApts > 0 ? Math.round((completedCount / totalApts) * 100) : 0;
         // Đếm số ca khám phân bổ theo từng Chuyên khoa từ CSDL
@@ -514,7 +520,7 @@ app.get('/api/admin/dashboard-stats', async (req, res) => {
         });
 
         res.json({
-            totalApts,
+            totalApts, arrivedCount, inProgressCount, noShowCount,
             completedCount,
             confirmedCount,
             pendingCount,

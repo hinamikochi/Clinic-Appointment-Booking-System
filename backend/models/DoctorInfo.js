@@ -13,6 +13,8 @@ const DoctorInfo = sequelize.define('DoctorInfo', {
         type: DataTypes.INTEGER,
         references: { model: Specialty, key: 'id' }
     },
+    acceptingBookings: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+    scheduleVersion: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false },
     workSchedule: { type: DataTypes.JSON, allowNull: true },
     degree: { type: DataTypes.STRING },
     image: { type: DataTypes.STRING },

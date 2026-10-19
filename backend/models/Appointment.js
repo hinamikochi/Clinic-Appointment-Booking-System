@@ -45,14 +45,20 @@ const Appointment = sequelize.define('Appointment', {
     },
     status: {
         type: DataTypes.STRING,
-        defaultValue: 'pending' 
+        defaultValue: 'pending'
     },
+    patientProfileId: { type: DataTypes.INTEGER, allowNull: true },
+    version: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false },
+    cancellationReason: { type: DataTypes.TEXT, allowNull: true },
+    bookingRequestKey: { type: DataTypes.STRING(64), allowNull: true, unique: true },
+    bookingFingerprint: { type: DataTypes.STRING(64), allowNull: true },
+    meetingUrl: { type: DataTypes.STRING(1000), allowNull: true },
     consultationFee: { type: DataTypes.INTEGER, allowNull: true },
     claimCodeHash: { type: DataTypes.STRING(64), allowNull: true },
     activeSlot: { type: DataTypes.STRING(100), allowNull: true, unique: true },
     userId: {
         type: DataTypes.INTEGER,
-        allowNull: true 
+        allowNull: true
     }
 }, {
     tableName: 'appointments',

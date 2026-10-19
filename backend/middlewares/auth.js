@@ -9,8 +9,8 @@ async function authMiddleware(req, res, next) {
     try { decoded = jwt.verify(header.slice(7), jwtSecret, { algorithms: ['HS256'] }); }
     catch { return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn!' }); }
     try {
-        const user = await User.findByPk(decoded.id, { attributes: ['id', 'role'] });
-        if (!user) return res.status(401).json({ message: 'Tài khoản không còn tồn tại.' });
+        const user = await User.findByPk(decoded.id, { attributes: ['id', 'role', 'isActive', 'tokenVersion'] });
+        if (!user || user.isActive === false || (decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) return res.status(401).json({ message: 'Tài khoản không còn tồn tại.' });
         req.user = { id: user.id, role: user.role };
         next();
     } catch (error) { next(error); }

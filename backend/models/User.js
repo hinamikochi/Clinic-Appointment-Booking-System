@@ -1,8 +1,11 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db'); 
+const sequelize = require('../db');
 require('dotenv').config();
 
 const User = sequelize.define('User', {
+    isActive: { type: DataTypes.BOOLEAN, defaultValue: true, allowNull: false },
+    emailVerified: { type: DataTypes.BOOLEAN, defaultValue: false, allowNull: false },
+    tokenVersion: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: false },
     full_name: {
         type: DataTypes.STRING,
         allowNull: false

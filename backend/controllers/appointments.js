@@ -10,7 +10,7 @@ async function list(req, res, next) {
     try {
         const where = {};
         if (req.query.status && req.query.status !== 'all') {
-            if (!['pending', 'confirmed', 'completed', 'cancelled'].includes(req.query.status)) v.fail('Trạng thái không hợp lệ.');
+            if (!['pending', 'confirmed', 'arrived', 'in_progress', 'completed', 'cancelled', 'no_show'].includes(req.query.status)) v.fail('Trạng thái không hợp lệ.');
             where.status = req.query.status;
         }
         for (const field of ['doctorId', 'specialtyId']) if (req.query[field]) {

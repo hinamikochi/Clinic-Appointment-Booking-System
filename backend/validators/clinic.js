@@ -9,7 +9,7 @@ function validDate(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 }
 function futureSlot(date, slot, now = new Date()) {
-    return validDate(date) && TIME_SLOTS.includes(slot) && new Date(`${date}T${slot.slice(0, 5)}:00+07:00`) > now;
+    return validDate(date) && validTimeSlot(slot) && new Date(`${date}T${slot.slice(0, 5)}:00+07:00`) > now;
 }
 function fail(message, status = 400) { const error = new Error(message); error.status = status; throw error; }
 function text(value, label, max = 255, required = false) {
@@ -25,14 +25,21 @@ function credentials(body, registration = false) {
 }
 function schedule(value) {
     if (!value || !Array.isArray(value.weekdays) || !value.weekdays.length || value.weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)
-        || !Array.isArray(value.timeSlots) || !value.timeSlots.length || value.timeSlots.some(s => !TIME_SLOTS.includes(s))
+        || !Array.isArray(value.timeSlots) || !value.timeSlots.length || value.timeSlots.some(s => !validTimeSlot(s))
         || !Array.isArray(value.daysOff) || value.daysOff.some(d => !validDate(d))) fail('Lịch làm việc không hợp lệ.');
-    return { weekdays: [...new Set(value.weekdays)], timeSlots: [...new Set(value.timeSlots)], daysOff: [...new Set(value.daysOff)] };
+    const dates = value.dateOverrides || {};
+    if (typeof dates !== 'object' || Array.isArray(dates) || Object.entries(dates).some(([day, slots]) => !validDate(day) || !Array.isArray(slots) || slots.some(s => !validTimeSlot(s)))) fail('Lịch riêng theo ngày không hợp lệ.');
+    for (const slots of [value.timeSlots, ...Object.values(dates)]) if (slots.some((slot, i) => slots.slice(i + 1).some(other => overlaps(slot, other)))) fail('Các khung giờ làm việc không được chồng lấn.');
+    return { weekdays: [...new Set(value.weekdays)], timeSlots: [...new Set(value.timeSlots)].sort(), daysOff: [...new Set(value.daysOff)], dateOverrides: dates };
 }
-function worksOn(doctor, date, slot) {
-    const work = doctor.workSchedule || DEFAULT_SCHEDULE;
-    return work.weekdays.includes(new Date(`${date}T00:00:00Z`).getUTCDay()) && !work.daysOff.includes(date) && work.timeSlots.includes(slot);
+function validTimeSlot(slot) {
+    if (typeof slot !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d - ([01]\d|2[0-3]):[0-5]\d$/.test(slot)) return false;
+    const [start, end] = slot.split(' - ').map(time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3)));
+    return end > start && end - start <= 180;
 }
+function overlaps(a, b) { if (!validTimeSlot(a) || !validTimeSlot(b)) return a === b; return a.slice(0, 5) < b.slice(8) && b.slice(0, 5) < a.slice(8); }
+function slotsOn(doctor, date) { const work = doctor.workSchedule || DEFAULT_SCHEDULE; return work.daysOff.includes(date) ? [] : work.dateOverrides?.[date] || (work.weekdays.includes(new Date(date + 'T00:00:00Z').getUTCDay()) ? work.timeSlots : []); }
+function worksOn(doctor, date, slot) { return slotsOn(doctor, date).includes(slot); }
 function booking(body) {
     const patient_name = text(body.patient_name, 'Họ tên', 150, true);
     const patient_phone = text(body.patient_phone, 'Số điện thoại', 20, true);
@@ -44,4 +51,4 @@ function booking(body) {
     if (!futureSlot(body.appointment_date, body.time_slot)) fail('Vui lòng chọn ngày và khung giờ trong tương lai.');
     return { patient_name, patient_phone, patient_age, patient_gender: body.patient_gender || 'Nam', doctorId: Number(body.doctorId), specialtyId: Number(body.specialtyId), appointment_date: body.appointment_date, time_slot: body.time_slot, symptoms: text(body.symptoms, 'Triệu chứng', 5000) };
 }
-module.exports = { TIME_SLOTS, DEFAULT_SCHEDULE, clinicDate, validDate, futureSlot, fail, text, credentials, schedule, worksOn, booking };
+module.exports = { validTimeSlot, overlaps, slotsOn, TIME_SLOTS, DEFAULT_SCHEDULE, clinicDate, validDate, futureSlot, fail, text, credentials, schedule, worksOn, booking };
