@@ -13,6 +13,7 @@ const DoctorInfo = sequelize.define('DoctorInfo', {
         type: DataTypes.INTEGER,
         references: { model: Specialty, key: 'id' }
     },
+    workSchedule: { type: DataTypes.JSON, allowNull: true },
     degree: { type: DataTypes.STRING },
     image: { type: DataTypes.STRING },
     roomNumber: { type: DataTypes.STRING },

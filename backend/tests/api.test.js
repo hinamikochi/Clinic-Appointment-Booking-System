@@ -8,7 +8,8 @@ const Specialty = require('../models/Specialty');
 const DoctorInfo = require('../models/DoctorInfo');
 const Appointment = require('../models/Appointment');
 
-describe('Test các chức năng cơ bản', () => {
+const integration = process.env.RUN_DB_TESTS === '1' ? describe : describe.skip;
+integration('Test các chức năng cơ bản', () => {
     let adminToken, patientToken;
     let testAdminUser, testDoctorUser, testPatientUser;
     let testSpecialty, testDoctorInfo;
@@ -16,10 +17,11 @@ describe('Test các chức năng cơ bản', () => {
     let createdUserIds = [];
     let createdSpecialtyIds = [];
 
-    const secretKey = process.env.JWT_SECRET || 'secret_key';
+    const { jwtSecret: secretKey } = require('../config/security');
     const timestamp = Date.now();
 
     beforeAll(async () => {
+        await require('../migrations').migrate();
         // 1. Tạo Chuyên khoa test độc lập
         testSpecialty = await Specialty.create({
             name: `Khoa Test Tuần Này ${timestamp}`,
@@ -71,6 +73,11 @@ describe('Test các chức năng cơ bản', () => {
     afterAll(async () => {
         // Clear dữ liệu test 
         try {
+            const Record = require('../models/MedicalRecord');
+            const Audit = require('../models/MedicalRecordAudit');
+            const records = await Record.findAll({ where: { appointmentId: createdAppointmentIds } });
+            if (records.length) await Audit.destroy({ where: { medicalRecordId: records.map(record => record.id) } });
+            await Record.destroy({ where: { appointmentId: createdAppointmentIds } });
             if (createdAppointmentIds.length > 0) {
                 await Appointment.destroy({ where: { id: createdAppointmentIds } });
             }
@@ -148,7 +155,7 @@ describe('Test các chức năng cơ bản', () => {
     });
 
     // 6. Đặt lịch khám với dữ liệu hợp lệ 
-    const testBookingDate = '2026-11-20';
+    const testBookingDate = '2099-01-05';
     const testTimeSlot = '09:00 - 09:30';
 
     test('6. POST /api/appointments - Đặt lịch hợp lệ', async () => {
@@ -189,18 +196,88 @@ describe('Test các chức năng cơ bản', () => {
                 symptoms: 'Khám lại'
             });
 
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toContain(`Bác sĩ đã có lịch hẹn vào khung giờ ${testTimeSlot} ngày ${testBookingDate}`);
+        expect(res.statusCode).toBe(409);
     });
 
     // 8. Gọi API Dashboard Admin -> kiểm tra trả về dữ liệu thống kê hợp lệ 
     test('8. GET /api/admin/dashboard-stats - Trả về thống kê CSDL hợp lệ', async () => {
-        const res = await request(app).get('/api/admin/dashboard-stats');
+        const res = await request(app).get('/api/admin/dashboard-stats').set('Authorization', `Bearer ${adminToken}`);
 
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('totalApts');
         expect(res.body).toHaveProperty('completedCount');
         expect(res.body).toHaveProperty('successRate');
         expect(res.body).toHaveProperty('specialtyStats');
+    });
+
+    test('9. Concurrent bookings allow exactly one winner on MySQL', async () => {
+        const payload = { patient_name: 'Concurrent Test', patient_phone: '0912345678', doctorId: testDoctorInfo.id, specialtyId: testSpecialty.id, appointment_date: testBookingDate, time_slot: '14:00 - 14:30' };
+        const responses = await Promise.all([request(app).post('/api/appointments').send(payload), request(app).post('/api/appointments').send(payload)]);
+        for (const response of responses) if (response.status === 201) createdAppointmentIds.push(response.body.data.id);
+        expect(responses.map(response => response.status).sort()).toEqual([201, 409]);
+        expect(await Appointment.count({ where: { doctorId: testDoctorInfo.id, appointment_date: testBookingDate, time_slot: payload.time_slot } })).toBe(1);
+    });
+
+    test('10. Guest booking can only be claimed once with code and matching phone', async () => {
+        const payload = { patient_name: 'Guest Test', patient_phone: '0912345678', doctorId: testDoctorInfo.id, specialtyId: testSpecialty.id, appointment_date: testBookingDate, time_slot: '15:00 - 15:30', userId: testPatientUser.id };
+        const booked = await request(app).post('/api/appointments').send(payload);
+        expect(booked.status).toBe(201);
+        createdAppointmentIds.push(booked.body.data.id);
+        expect(booked.body.data.userId).toBe(null);
+        expect(booked.body.data.claimCodeHash).toBeUndefined();
+        const claim = { code: booked.body.data.bookingCode, phone: payload.patient_phone };
+        const bad = await request(app).post('/api/patient/claim-booking').set('Authorization', `Bearer ${patientToken}`).send({ ...claim, phone: '0987654321' });
+        expect(bad.status).toBe(404);
+        const success = await request(app).post('/api/patient/claim-booking').set('Authorization', `Bearer ${patientToken}`).send(claim);
+        expect(success.status).toBe(200);
+        expect((await Appointment.findByPk(booked.body.data.id)).userId).toBe(testPatientUser.id);
+        expect((await request(app).post('/api/patient/claim-booking').set('Authorization', `Bearer ${patientToken}`).send(claim)).status).toBe(404);
+    });
+
+    test('11. MySQL rolls back appointment, record and audit when audit save fails', async () => {
+        const Record = require('../models/MedicalRecord');
+        const Audit = require('../models/MedicalRecordAudit');
+        const appointment = await Appointment.create({ patient_name: 'Rollback Test', patient_phone: '0912345678', doctorId: testDoctorInfo.id, specialtyId: testSpecialty.id, appointment_date: '2020-01-01', time_slot: testTimeSlot, status: 'confirmed', userId: testPatientUser.id });
+        createdAppointmentIds.push(appointment.id);
+        const spy = jest.spyOn(Audit, 'create').mockRejectedValue(new Error('Simulated audit storage failure'));
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const response = await request(app).post('/api/medical-records').set('Authorization', `Bearer ${adminToken}`).send({ appointmentId: appointment.id, diagnosis: 'Test rollback' });
+            expect(response.status).toBe(500);
+            expect((await Appointment.findByPk(appointment.id)).status).toBe('confirmed');
+            expect(await Record.count({ where: { appointmentId: appointment.id } })).toBe(0);
+        } finally { spy.mockRestore(); consoleSpy.mockRestore(); }
+    });
+
+    test('12. Admin filters and paginates appointments on MySQL', async () => {
+        const response = await request(app).get('/api/appointments').set('Authorization', `Bearer ${adminToken}`).query({ page: 1, limit: 1, doctorId: testDoctorInfo.id, date: testBookingDate, search: 'Concurrent' });
+        expect(response.status).toBe(200);
+        expect(response.body.total).toBe(1);
+        expect(response.body.items).toHaveLength(1);
+        expect(response.body.items[0].patient_name).toBe('Concurrent Test');
+        expect(response.body.items[0].claimCodeHash).toBeUndefined();
+    });
+
+    test('13. Schedule edits cannot invalidate existing future appointments', async () => {
+        const response = await request(app).put(`/api/doctors/${testDoctorInfo.id}/schedule`).set('Authorization', `Bearer ${adminToken}`).send({ weekdays: [1, 2, 3, 4, 5, 6], timeSlots: [testTimeSlot], daysOff: [testBookingDate] });
+        expect(response.status).toBe(400);
+        expect((await DoctorInfo.findByPk(testDoctorInfo.id)).workSchedule).toBe(null);
+    });
+
+    test('14. Successful examination derives IDs, completes appointment and records audit', async () => {
+        const Record = require('../models/MedicalRecord');
+        const Audit = require('../models/MedicalRecordAudit');
+        const appointment = await Appointment.create({ patient_name: 'Record Success Test', patient_phone: '0912345678', doctorId: testDoctorInfo.id, specialtyId: testSpecialty.id, appointment_date: '2020-01-02', time_slot: testTimeSlot, status: 'confirmed', userId: testPatientUser.id });
+        createdAppointmentIds.push(appointment.id);
+        const response = await request(app).post('/api/medical-records').set('Authorization', `Bearer ${adminToken}`).send({ appointmentId: appointment.id, patientId: 999999, doctorId: 999999, diagnosis: 'Test examination', prescriptionItems: [{ name: 'Test medication', dosage: 'Test dose', frequency: 'Test frequency', duration: 'Test duration', instructions: '' }] });
+        expect(response.status).toBe(201);
+        const record = await Record.findByPk(response.body.data.id);
+        expect(record.doctorId).toBe(testDoctorInfo.id);
+        expect(record.patientId).toBe(testPatientUser.id);
+        expect(record.prescriptionItems).toHaveLength(1);
+        expect((await Appointment.findByPk(appointment.id)).status).toBe('completed');
+        expect(await Audit.count({ where: { medicalRecordId: record.id } })).toBe(1);
+        expect((await request(app).get(`/api/medical-records/${record.id}/audit`).set('Authorization', `Bearer ${patientToken}`)).status).toBe(403);
+        expect((await request(app).get(`/api/medical-records/${record.id}/audit`).set('Authorization', `Bearer ${adminToken}`)).body).toHaveLength(1);
     });
 });

@@ -47,12 +47,16 @@ const Appointment = sequelize.define('Appointment', {
         type: DataTypes.STRING,
         defaultValue: 'pending' 
     },
+    consultationFee: { type: DataTypes.INTEGER, allowNull: true },
+    claimCodeHash: { type: DataTypes.STRING(64), allowNull: true },
+    activeSlot: { type: DataTypes.STRING(100), allowNull: true, unique: true },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: true 
     }
 }, {
-    tableName: 'appointments'
+    tableName: 'appointments',
+    defaultScope: { attributes: { exclude: ['claimCodeHash'] } }
 });
 
 module.exports = Appointment;

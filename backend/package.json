@@ -4,8 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "jest --detectOpenHandles --forceExit --runInBand"
+    "start": "node server.js",
+    "migrate": "node migrations/index.js",
+    "create-admin": "node scripts/create-admin.js",
+    "smoke": "node scripts/smoke-check.js",
+    "test": "jest --detectOpenHandles --runInBand"
   },
   "keywords": [],
   "author": "",

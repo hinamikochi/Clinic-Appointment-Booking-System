@@ -20,6 +20,8 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    prescriptionItems: { type: DataTypes.JSON, allowNull: true },
+    updatedBy: { type: DataTypes.INTEGER, allowNull: true },
     diagnosis: {
         type: DataTypes.TEXT,
         allowNull: false 
